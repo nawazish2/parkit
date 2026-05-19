@@ -4,6 +4,7 @@ import { Search as SearchIcon, MapPin, Car, Loader2, LogOut } from 'lucide-react
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import type { ParkingLot } from '../types';
+import { safeParseJSON } from '../utils/json';
 
 const Search: React.FC = () => {
   const navigate = useNavigate();
@@ -108,7 +109,7 @@ const Search: React.FC = () => {
                 <span className="text-indigo-400 font-bold text-lg">₹{lot.pricePerHour}<span className="text-xs text-slate-500 font-normal">/hr</span></span>
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
-                {(JSON.parse(lot.amenities || '[]') as string[]).slice(0, 3).map((a: string) => (
+                {(safeParseJSON(lot.amenities) as string[]).slice(0, 3).map((a: string) => (
                   <span key={a} className="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded-lg text-slate-400">{a}</span>
                 ))}
               </div>

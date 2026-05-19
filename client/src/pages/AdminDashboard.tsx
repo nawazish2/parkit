@@ -226,9 +226,9 @@ const AdminDashboard: React.FC = () => {
                       <td className="p-4 font-mono text-indigo-400 font-bold">#{u.id}</td>
                       <td className="p-4 font-semibold text-white flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-indigo-600/30 flex items-center justify-center text-xs font-bold text-indigo-300">
-                          {u.name[0].toUpperCase()}
+                          {(u.name ? u.name[0] : 'U').toUpperCase()}
                         </div>
-                        {u.name}
+                        {u.name || 'Unnamed User'}
                       </td>
                       <td className="p-4 text-slate-300">{u.email}</td>
                       <td className="p-4 capitalize font-medium text-indigo-300">{u.role}</td>

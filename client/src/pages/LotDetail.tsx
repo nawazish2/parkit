@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import SlotGrid from '../components/SlotGrid';
 import api from '../api/axios';
 import type { ParkingLot, Slot, Booking } from '../types';
+import { safeParseJSON } from '../utils/json';
 
 const LotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -142,7 +143,7 @@ const LotDetail: React.FC = () => {
     }
   };
 
-  const amenitiesList = JSON.parse(lot.amenities || '[]') as string[];
+  const amenitiesList = safeParseJSON(lot.amenities) as string[];
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col pb-20">
