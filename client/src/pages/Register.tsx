@@ -89,8 +89,8 @@ const Register: React.FC = () => {
 
           <div>
             <label className="text-sm text-slate-400 mb-2 block">I am a...</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['driver', 'owner', 'admin'].map(r => (
+            <div className="grid grid-cols-2 gap-2">
+              {['driver', 'owner'].map(r => (
                 <button
                   key={r}
                   type="button"

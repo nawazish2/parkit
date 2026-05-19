@@ -6,6 +6,11 @@ import { User } from '../models/User';
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role } = req.body;
+    
+    if (role === 'admin') {
+      res.status(400).json({ message: 'Cannot register directly as an administrator' });
+      return;
+    }
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
