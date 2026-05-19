@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, ShieldCheck, Zap, QrCode, ArrowRight, MapPin, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
+import { Car, ShieldCheck, Zap, QrCode, ArrowRight, Sparkles, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Landing: React.FC = () => {

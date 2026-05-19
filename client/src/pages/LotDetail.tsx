@@ -87,7 +87,7 @@ const LotDetail: React.FC = () => {
 
       const { order, key_id } = orderRes.data;
 
-      if (key_id === 'demo_mode' || !window.Razorpay) {
+      if (key_id === 'demo_mode' || !(window as any).Razorpay) {
         // Fallback demo auto-verify
         const verifyRes = await api.post('/payment/verify', {
           bookingId: newBooking.id,

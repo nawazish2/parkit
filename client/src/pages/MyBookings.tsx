@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, QrCode, XCircle, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, QrCode, XCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
 import type { Booking } from '../types';
