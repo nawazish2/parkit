@@ -14,7 +14,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(token, process.env.JWT_SECRET || 'secret', (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET!, (err, decoded) => {
       if (err) {
         res.status(403).json({ message: 'Token is not valid' });
         return;

@@ -2,11 +2,12 @@ import bcrypt from 'bcryptjs';
 import { User } from '../models/User';
 import { ParkingLot } from '../models/ParkingLot';
 import { Slot } from '../models/Slot';
+import { Booking } from '../models/Booking';
 
 export const seedDatabase = async () => {
   try {
-    const count = await User.count();
-    if (count > 0) {
+    const demoUser = await User.findOne({ where: { email: 'driver@demo.com' } });
+    if (demoUser) {
       console.log('🌱 Database already seeded.');
       return;
     }
@@ -72,41 +73,72 @@ export const seedDatabase = async () => {
       amenities: JSON.stringify(['Sea View Deck', 'VIP Reserved', 'Premium Valet']),
     });
 
-    // 3. Create Slots for Lot 1
+    // 3. Create Slots for each lot using bulkCreate for performance
     const prefixes = ['A', 'B', 'C', 'D'];
-    for (const prefix of prefixes) {
-      for (let i = 1; i <= 5; i++) {
-        await Slot.create({
-          lotId: lot1.id,
-          slotNumber: `${prefix}${i}`,
-          isAvailable: Math.random() > 0.2, // 80% available
-        });
-      }
+    const generateSlotData = (lotId: number) =>
+      prefixes.flatMap(prefix =>
+        Array.from({ length: 5 }, (_, i) => ({
+          lotId,
+          slotNumber: `${prefix}${i + 1}`,
+          isAvailable: true,
+        }))
+      );
+
+    await Slot.bulkCreate([
+      ...generateSlotData(lot1.id),
+      ...generateSlotData(lot2.id),
+      ...generateSlotData(lot3.id),
+    ]);
+
+    // 4. Create some confirmed bookings in the last 7 days for the chart
+    console.log('🌱 Seeding confirmed bookings...');
+    const slots = await Slot.findAll({ where: { lotId: lot1.id } });
+    const now = new Date();
+
+    const generateBookingDate = (daysAgo: number, hour: number) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - daysAgo);
+      d.setHours(hour, 0, 0, 0);
+      return d;
+    };
+
+    const bookingDetails = [
+      { daysAgo: 0, hours: 2, amount: 120, slotIndex: 0 },
+      { daysAgo: 0, hours: 3, amount: 180, slotIndex: 1 },
+      { daysAgo: 1, hours: 4, amount: 240, slotIndex: 2 },
+      { daysAgo: 1, hours: 1, amount: 60, slotIndex: 3 },
+      { daysAgo: 2, hours: 5, amount: 300, slotIndex: 4 },
+      { daysAgo: 3, hours: 2, amount: 120, slotIndex: 5 },
+      { daysAgo: 3, hours: 2, amount: 120, slotIndex: 6 },
+      { daysAgo: 4, hours: 3, amount: 180, slotIndex: 7 },
+      { daysAgo: 5, hours: 1, amount: 60, slotIndex: 8 },
+      { daysAgo: 5, hours: 4, amount: 240, slotIndex: 9 },
+      { daysAgo: 6, hours: 2, amount: 120, slotIndex: 10 }
+    ];
+
+    for (const detail of bookingDetails) {
+      const start = generateBookingDate(detail.daysAgo, 10);
+      const end = generateBookingDate(detail.daysAgo, 10 + detail.hours);
+      const slot = slots[detail.slotIndex] || slots[0];
+      
+      const b = await Booking.create({
+        userId: driver.id,
+        lotId: lot1.id,
+        slotId: slot.id,
+        startTime: start,
+        endTime: end,
+        totalAmount: detail.amount,
+        status: 'confirmed',
+        qrCode: `demo-qr-code-${detail.daysAgo}-${detail.slotIndex}`,
+        vehicleType: 'Sedan',
+        licensePlate: `DL3CAF${1000 + detail.slotIndex}`
+      });
+
+      const historicalDate = generateBookingDate(detail.daysAgo, 12);
+      await Booking.update({ createdAt: historicalDate }, { where: { id: b.id } });
     }
 
-    // Slots for Lot 2
-    for (const prefix of prefixes) {
-      for (let i = 1; i <= 5; i++) {
-        await Slot.create({
-          lotId: lot2.id,
-          slotNumber: `${prefix}${i}`,
-          isAvailable: Math.random() > 0.3,
-        });
-      }
-    }
-
-    // Slots for Lot 3
-    for (const prefix of prefixes) {
-      for (let i = 1; i <= 5; i++) {
-        await Slot.create({
-          lotId: lot3.id,
-          slotNumber: `${prefix}${i}`,
-          isAvailable: Math.random() > 0.2,
-        });
-      }
-    }
-
-    console.log('✅ Database seeded successfully with demo users and properties!');
+    console.log('✅ Database seeded successfully with demo users, properties, and bookings!');
   } catch (error) {
     console.error('❌ Database seed error:', error);
   }

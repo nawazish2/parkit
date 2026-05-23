@@ -1,8 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, MapPin, DollarSign, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
+import {
+  Shield, Users, MapPin, DollarSign, CheckCircle2, XCircle,
+  Clock, Loader2, AlertTriangle, TrendingUp, Building2, Search, RefreshCw,
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
 import type { ParkingLot, User } from '../types';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface AdminStats {
   totalUsers: number;
@@ -16,10 +38,18 @@ const AdminDashboard: React.FC = () => {
   const [lots, setLots] = useState<ParkingLot[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'lots' | 'users'>('lots');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [lotSearch, setLotSearch] = useState('');
+  const [lotFilter, setLotFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    setError('');
     try {
       const [statsRes, lotsRes, usersRes] = await Promise.all([
         api.get('/admin/stats'),
@@ -31,8 +61,10 @@ const AdminDashboard: React.FC = () => {
       setUsers(usersRes.data);
     } catch (err) {
       console.error('Failed to fetch admin data', err);
+      setError('Failed to load dashboard data. Please refresh.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -44,202 +76,412 @@ const AdminDashboard: React.FC = () => {
     setUpdatingId(lotId);
     try {
       await api.put(`/admin/lots/${lotId}/status`, { status });
-      await fetchData();
+      await fetchData(true);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to update lot status');
+      setError(err.response?.data?.message || 'Failed to update lot status');
     } finally {
       setUpdatingId(null);
     }
   };
 
-  if (loading || !stats) {
+  const filteredUsers = users.filter(u =>
+    u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+    u.email?.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const filteredLots = lots.filter(lot => {
+    const matchesFilter = lotFilter === 'all' || lot.status === lotFilter;
+    const matchesSearch = lot.name?.toLowerCase().includes(lotSearch.toLowerCase()) ||
+      lot.city?.toLowerCase().includes(lotSearch.toLowerCase()) ||
+      lot.address?.toLowerCase().includes(lotSearch.toLowerCase()) ||
+      lot.owner?.name?.toLowerCase().includes(lotSearch.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+      <div className="min-h-screen bg-[#06060a] text-white flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center gap-3">
           <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+          <span className="text-slate-400 font-medium">Loading admin panel...</span>
         </div>
       </div>
     );
   }
 
+  const statCards = [
+    {
+      label: 'Platform Revenue',
+      value: `₹${stats?.totalRevenue?.toLocaleString('en-IN') ?? 0}`,
+      icon: <DollarSign className="w-5 h-5" />,
+      color: 'text-white',
+      iconBg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+      glow: 'bg-indigo-600/10',
+      subtext: 'Cumulative booking revenue',
+    },
+    {
+      label: 'Total Users',
+      value: stats?.totalUsers ?? 0,
+      icon: <Users className="w-5 h-5" />,
+      color: 'text-emerald-400',
+      iconBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+      glow: 'bg-emerald-600/10',
+      onClick: () => setActiveTab('users'),
+      subtext: 'Click to view registered users',
+    },
+    {
+      label: 'Total Properties',
+      value: stats?.totalLots ?? 0,
+      icon: <Building2 className="w-5 h-5" />,
+      color: 'text-violet-400',
+      iconBg: 'bg-violet-500/10 border-violet-500/20 text-violet-400',
+      glow: 'bg-violet-600/10',
+      onClick: () => {
+        setActiveTab('lots');
+        setLotFilter('all');
+      },
+      subtext: 'Click to view properties',
+    },
+    {
+      label: 'Pending Approvals',
+      value: stats?.pendingLots?.length ?? 0,
+      icon: <Clock className="w-5 h-5" />,
+      color: 'text-amber-400',
+      iconBg: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+      glow: 'bg-amber-600/10',
+      pulse: (stats?.pendingLots?.length ?? 0) > 0,
+      onClick: () => {
+        setActiveTab('lots');
+        setLotFilter('pending');
+      },
+      subtext: (stats?.pendingLots?.length ?? 0) > 0 ? 'Requires attention ↑' : 'All properties reviewed',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col pb-20">
+    <div className="min-h-screen bg-[#06060a] text-white flex flex-col pb-20">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-8 mt-4">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
-            <Shield className="w-8 h-8 text-indigo-400" />
-            Admin Superuser Panel
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Supervise platform integrity, approve parking property submissions, and inspect member directories
-          </p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-slideUp">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-red-500/15 rounded-2xl flex items-center justify-center border border-red-500/25">
+                <Shield className="w-5 h-5 text-red-400 animate-pulse" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white font-display tracking-tight">Admin Superuser Panel</h1>
+            </div>
+            <p className="text-slate-400 text-sm ml-13">
+              Platform oversight, property approvals, and member directory management
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            className="border-white/10 hover:bg-white/5 hover:text-white transition-all text-slate-300 font-semibold"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl flex items-center gap-2 animate-fadeIn">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="card border-indigo-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-600/10 rounded-full blur-xl pointer-events-none" />
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-400">Platform Revenue</span>
-              <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-                <DollarSign className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="text-3xl font-extrabold text-white">₹{stats.totalRevenue}</div>
-          </div>
-
-          <div className="card border-emerald-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-600/10 rounded-full blur-xl pointer-events-none" />
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-400">Total Registered Users</span>
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                <Users className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="text-3xl font-extrabold text-emerald-400">{stats.totalUsers}</div>
-          </div>
-
-          <div className="card border-violet-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-violet-600/10 rounded-full blur-xl pointer-events-none" />
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-400">Total Properties</span>
-              <div className="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center text-violet-400 border border-violet-500/20">
-                <MapPin className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="text-3xl font-extrabold text-white">{stats.totalLots}</div>
-          </div>
-
-          <div className="card border-amber-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-600/10 rounded-full blur-xl pointer-events-none" />
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-400">Pending Approvals</span>
-              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 border border-amber-500/20">
-                <Clock className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="text-3xl font-extrabold text-amber-400">{stats.pendingLots.length}</div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {statCards.map((card, i) => {
+            const isClickable = !!card.onClick;
+            return (
+              <Card
+                key={card.label}
+                onClick={card.onClick}
+                className={`p-6 rounded-2xl animate-fadeIn transition-all duration-300 relative overflow-hidden group border-white/5 bg-slate-950/40 backdrop-blur-2xl ${
+                  isClickable
+                    ? 'cursor-pointer hover:scale-[1.02] hover:border-indigo-500/30 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-indigo-500/50'
+                    : ''
+                }`}
+                style={{ animationDelay: `${i * 0.07}s` }}
+              >
+                <div className={`absolute top-0 right-0 w-24 h-24 ${card.glow} rounded-full blur-xl pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity`} />
+                <div className="flex justify-between items-center mb-3 relative z-10">
+                  <span className="text-xs font-semibold text-slate-400">{card.label}</span>
+                  <div className={`w-9 h-9 ${card.iconBg} border rounded-xl flex items-center justify-center relative`}>
+                    {card.icon}
+                    {card.pulse && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping" />
+                    )}
+                  </div>
+                </div>
+                <div className={`text-3xl font-black ${card.color} relative z-10 font-display`}>{card.value}</div>
+                {card.subtext && (
+                  <div className={`text-xs mt-1.5 relative z-10 transition-colors duration-300 ${
+                    card.label === 'Pending Approvals' && (stats?.pendingLots?.length ?? 0) > 0
+                      ? 'text-amber-400/80 font-semibold'
+                      : 'text-slate-500 group-hover:text-slate-400/80'
+                  }`}>
+                    {card.subtext}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Tab Selection */}
-        <div className="flex border-b border-white/10 gap-8">
-          <button
-            onClick={() => setActiveTab('lots')}
-            className={`pb-4 text-base font-bold transition-all flex items-center gap-2 border-b-2 ${
-              activeTab === 'lots' ? 'border-indigo-500 text-white' : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <MapPin className="w-5 h-5" />
-            Property Submissions ({lots.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`pb-4 text-base font-bold transition-all flex items-center gap-2 border-b-2 ${
-              activeTab === 'users' ? 'border-indigo-500 text-white' : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            User Directory ({users.length})
-          </button>
-        </div>
+        {/* Pending Approvals Alert */}
+        {(stats?.pendingLots?.length ?? 0) > 0 && (
+          <Card className="bg-amber-500/5 border-amber-500/20 p-5 flex items-center justify-between gap-4 animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/15 rounded-xl flex items-center justify-center shrink-0 border border-amber-500/25">
+                <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-amber-300 font-display">
+                  {stats!.pendingLots.length} property request{stats!.pendingLots.length > 1 ? 's' : ''} awaiting approval
+                </h4>
+                <p className="text-xs text-amber-400/70 mt-0.5">Please review safety details and capacity before approving.</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                setActiveTab('lots');
+                setLotFilter('pending');
+              }}
+              className="px-4 py-2 text-xs font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all"
+            >
+              Review Now →
+            </Button>
+          </Card>
+        )}
 
-        {/* Tab Content: Lots */}
-        {activeTab === 'lots' && (
-          <div className="space-y-4">
-            {lots.length === 0 ? (
-              <div className="glass p-12 text-center text-slate-500">No parking lots submitted yet.</div>
+        {/* Tabs Control */}
+        <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full">
+          <TabsList className="bg-slate-950/65 border border-white/5 p-1 rounded-xl mb-6">
+            <TabsTrigger
+              value="lots"
+              className="px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-600 data-[state=active]:text-white text-slate-400 hover:text-white"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Properties</span>
+              <Badge className="ml-1 px-1.5 py-0 bg-white/10 text-white border-none shadow-none text-[10px]">{lots.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger
+              value="users"
+              className="px-5 py-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-600 data-[state=active]:text-white text-slate-400 hover:text-white"
+            >
+              <Users className="w-4 h-4" />
+              <span>Users</span>
+              <Badge className="ml-1 px-1.5 py-0 bg-white/10 text-white border-none shadow-none text-[10px]">{users.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="lots" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Filter pills */}
+              <div className="bg-slate-950/40 border border-white/5 p-1 flex gap-1 rounded-xl w-fit">
+                {(['all', 'pending', 'approved', 'rejected'] as const).map((filter) => {
+                  const count = filter === 'all'
+                    ? lots.length
+                    : lots.filter(l => l.status === filter).length;
+                  return (
+                    <Button
+                      key={filter}
+                      variant="ghost"
+                      onClick={() => setLotFilter(filter)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize border transition-all h-auto hover:bg-white/5 hover:text-white ${
+                        lotFilter === filter
+                          ? filter === 'pending'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : filter === 'approved'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : filter === 'rejected'
+                            ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                            : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                          : 'border-transparent text-slate-400'
+                      }`}
+                    >
+                      {filter}
+                      <span className="ml-1.5 text-[10px] opacity-85">({count})</span>
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {/* Search properties */}
+              <div className="relative w-full sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Input
+                  type="text"
+                  placeholder="Search properties..."
+                  className="pl-10 text-sm py-2 bg-slate-900/85 border-white/5 focus:border-indigo-500/50"
+                  value={lotSearch}
+                  onChange={e => setLotSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {filteredLots.length === 0 ? (
+              <Card className="p-14 text-center text-slate-500 space-y-2 border-white/5 bg-slate-950/40">
+                <Building2 className="w-10 h-10 mx-auto opacity-30 text-indigo-400 animate-float" />
+                <p className="font-medium text-slate-400">No properties found matching the criteria.</p>
+              </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {lots.map((lot: any) => (
-                  <div key={lot.id} className="glass p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-white/10 hover:border-indigo-500/30 transition-all">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-bold text-white">{lot.name}</h3>
-                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
-                          lot.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                          lot.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                          'bg-red-500/10 text-red-400 border border-red-500/20'
+              <div className="space-y-3">
+                {filteredLots.map((lot: any) => (
+                  <Card
+                    key={lot.id}
+                    className="admin-lot-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 border-white/5 bg-slate-950/45 hover:border-indigo-500/30 group relative overflow-hidden transition-all duration-300"
+                  >
+                    <div className="absolute top-0 left-0 w-[2px] h-full transition-colors duration-300 bg-transparent group-hover:bg-indigo-500" />
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h3 className="text-lg font-bold text-white font-display">{lot.name}</h3>
+                        <Badge className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-transparent hover:bg-transparent shadow-none ${
+                          lot.status === 'approved'
+                            ? 'text-emerald-400 border-emerald-500/20'
+                            : lot.status === 'pending'
+                            ? 'text-amber-400 border-amber-500/20'
+                            : 'text-red-400 border-red-500/20'
                         }`}>
                           {lot.status}
-                        </span>
+                        </Badge>
                       </div>
-                      <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {lot.address}, {lot.city}
+                      <p className="text-xs text-slate-300 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-indigo-400" />
+                        {lot.address}, {lot.city}
                       </p>
-                      <p className="text-xs text-slate-500">Submitted by: <span className="text-slate-300 font-medium">{lot.owner?.name}</span> ({lot.owner?.email})</p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 bg-white/5 w-fit px-2.5 py-1 rounded-lg border border-white/10 mt-2">
+                        <span className="font-semibold text-slate-300">Owner:</span>
+                        <span className="text-slate-300 font-medium">{lot.owner?.name}</span>
+                        <span className="text-slate-500">|</span>
+                        <span className="text-slate-400 font-mono text-[11px]">{lot.owner?.email}</span>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/10 md:border-transparent">
-                      <div>
-                        <div className="text-xs text-slate-400">Hourly Rate</div>
-                        <div className="text-xl font-extrabold text-indigo-400">₹{lot.pricePerHour}/hr</div>
+                    <div className="flex flex-wrap items-center gap-5 shrink-0 border-t md:border-t-0 pt-4 md:pt-0 border-white/5 md:w-auto w-full justify-between md:justify-end">
+                      <div className="text-left md:text-right">
+                        <div className="text-xs text-slate-500">Rate</div>
+                        <div className="text-xl font-black text-indigo-400 font-display">₹{lot.pricePerHour}<span className="text-xs text-slate-500 font-normal">/hr</span></div>
                       </div>
 
                       {lot.status === 'pending' && (
-                        <div className="flex items-center gap-2">
-                          <button
+                        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                          <Button
+                            id={`approve-lot-${lot.id}`}
                             onClick={() => handleUpdateStatus(lot.id, 'approved')}
                             disabled={updatingId === lot.id}
-                            className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/20"
                           >
-                            <CheckCircle2 className="w-4 h-4" /> Approve
-                          </button>
-                          <button
+                            {updatingId === lot.id
+                              ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                              : <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                            }
+                            Approve
+                          </Button>
+                          <Button
+                            id={`reject-lot-${lot.id}`}
                             onClick={() => handleUpdateStatus(lot.id, 'rejected')}
                             disabled={updatingId === lot.id}
-                            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 px-4 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5 disabled:opacity-50"
+                            variant="outline"
+                            className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-400 font-bold text-sm"
                           >
-                            <XCircle className="w-4 h-4" /> Reject
-                          </button>
+                            <XCircle className="w-4 h-4 mr-1.5" /> Reject
+                          </Button>
+                        </div>
+                      )}
+                      {lot.status !== 'pending' && (
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                          lot.status === 'approved'
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        }`}>
+                          <TrendingUp className="w-4 h-4" />
                         </div>
                       )}
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             )}
-          </div>
-        )}
+          </TabsContent>
 
-        {/* Tab Content: Users */}
-        {activeTab === 'users' && (
-          <div className="glass overflow-hidden border border-white/10 rounded-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-semibold">
-                    <th className="p-4">User ID</th>
-                    <th className="p-4">Full Name</th>
-                    <th className="p-4">Email Address</th>
-                    <th className="p-4">Platform Role</th>
-                    <th className="p-4">Joined Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {users.map(u => (
-                    <tr key={u.id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 font-mono text-indigo-400 font-bold">#{u.id}</td>
-                      <td className="p-4 font-semibold text-white flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-indigo-600/30 flex items-center justify-center text-xs font-bold text-indigo-300">
-                          {(u.name ? u.name[0] : 'U').toUpperCase()}
-                        </div>
-                        {u.name || 'Unnamed User'}
-                      </td>
-                      <td className="p-4 text-slate-300">{u.email}</td>
-                      <td className="p-4 capitalize font-medium text-indigo-300">{u.role}</td>
-                      <td className="p-4 text-slate-400">{new Date((u as any).createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <TabsContent value="users" className="space-y-4">
+            {/* Search filter */}
+            <div className="relative max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Input
+                type="text"
+                placeholder="Search users..."
+                className="pl-10 text-sm py-2.5 bg-slate-900/85 border-white/5 focus:border-indigo-500/50"
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+              />
             </div>
-          </div>
-        )}
+
+            <Card className="overflow-hidden border-white/5 bg-slate-950/40 backdrop-blur-2xl">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-white/5">
+                    <TableRow className="border-b border-white/10 hover:bg-transparent">
+                      <TableHead className="p-4 pl-6 font-bold text-slate-300 text-xs uppercase tracking-wider">ID</TableHead>
+                      <TableHead className="p-4 font-bold text-slate-300 text-xs uppercase tracking-wider">User</TableHead>
+                      <TableHead className="p-4 font-bold text-slate-300 text-xs uppercase tracking-wider">Email</TableHead>
+                      <TableHead className="p-4 font-bold text-slate-300 text-xs uppercase tracking-wider">Role</TableHead>
+                      <TableHead className="p-4 pr-6 font-bold text-slate-300 text-xs uppercase tracking-wider">Joined</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-white/5">
+                    {filteredUsers.map(u => (
+                      <TableRow key={u.id} className="hover:bg-white/3 border-none transition-colors group">
+                        <TableCell className="p-4 pl-6 font-mono text-indigo-400 font-bold text-xs">#{u.id}</TableCell>
+                        <TableCell className="p-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-xs font-black text-white shadow-md shadow-indigo-600/10">
+                              {(u.name ? u.name[0] : 'U').toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-white group-hover:text-indigo-300 transition-colors">{u.name || 'Unnamed'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4 text-slate-300">{u.email}</TableCell>
+                        <TableCell className="p-4">
+                          <Badge className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border bg-transparent hover:bg-transparent shadow-none ${
+                            u.role === 'admin'
+                              ? 'text-red-400 border-red-500/20'
+                              : u.role === 'owner'
+                              ? 'text-violet-400 border-violet-500/20'
+                              : 'text-emerald-400 border-emerald-500/20'
+                          }`}>
+                            {u.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="p-4 pr-6 text-slate-400 text-xs">
+                          {new Date((u as any).createdAt).toLocaleDateString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="p-10 text-center text-slate-500 font-medium">
+                          No users match your search.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

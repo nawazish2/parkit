@@ -13,4 +13,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-logout on 401 responses (expired or invalid JWT)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear stale auth state
+      localStorage.removeItem('parkit_token');
+      localStorage.removeItem('parkit_user');
+      // Redirect to login if not already there
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/register' &&
+        window.location.pathname !== '/'
+      ) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

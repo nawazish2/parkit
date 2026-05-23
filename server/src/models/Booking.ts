@@ -14,6 +14,8 @@ export class Booking extends Model {
   public declare totalAmount: number;
   public declare status: 'pending' | 'confirmed' | 'cancelled';
   public declare qrCode: string;
+  public declare vehicleType: string;
+  public declare licensePlate: string;
 }
 
 Booking.init(
@@ -44,7 +46,7 @@ Booking.init(
       allowNull: false,
     },
     totalAmount: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     status: {
@@ -55,11 +57,26 @@ Booking.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    vehicleType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'Sedan',
+    },
+    licensePlate: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     tableName: 'bookings',
     timestamps: true,
+    indexes: [
+      { fields: ['userId'] },
+      { fields: ['lotId'] },
+      { fields: ['slotId'] },
+      { fields: ['status'] },
+    ],
   }
 );
 

@@ -42,7 +42,7 @@ export const getOwnerStats = async (req: AuthRequest, res: Response): Promise<vo
     });
 
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
-    const revenue = confirmedBookings.reduce((sum, b) => sum + b.totalAmount, 0);
+    const revenue = confirmedBookings.reduce((sum, b) => sum + Number(b.totalAmount), 0);
 
     // Get slots occupancy
     const totalSlots = await Slot.count({ where: { lotId: { [Op.in]: lotIds } } });
@@ -61,7 +61,7 @@ export const getOwnerStats = async (req: AuthRequest, res: Response): Promise<vo
     confirmedBookings.forEach(b => {
       const dateStr = (b as any).createdAt.toISOString().split('T')[0];
       if (chartMap[dateStr] !== undefined) {
-        chartMap[dateStr] += b.totalAmount;
+        chartMap[dateStr] += Number(b.totalAmount);
       }
     });
 
@@ -75,11 +75,11 @@ export const getOwnerStats = async (req: AuthRequest, res: Response): Promise<vo
       totalBookings: bookings.length,
       occupancyRate,
       chartData,
-      recentBookings: bookings.slice(0, 10),
+      recentBookings: bookings,
       lots,
     });
   } catch (error) {
     console.error('Get owner stats error:', error);
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ message: 'Server Error' });
   }
 };

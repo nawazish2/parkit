@@ -7,6 +7,7 @@ export class User extends Model {
   public declare email: string;
   public declare password: string;
   public declare role: 'driver' | 'owner' | 'admin';
+  public declare savedVehicles: string;
 }
 
 User.init(
@@ -32,6 +33,11 @@ User.init(
     role: {
       type: DataTypes.ENUM('driver', 'owner', 'admin'),
       defaultValue: 'driver',
+    },
+    savedVehicles: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: '[]',
     },
   },
   {

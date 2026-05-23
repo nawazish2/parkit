@@ -12,6 +12,7 @@ const LotDetail = React.lazy(() => import('./pages/LotDetail'));
 const MyBookings = React.lazy(() => import('./pages/MyBookings'));
 const OwnerDashboard = React.lazy(() => import('./pages/OwnerDashboard'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const Profile = React.lazy(() => import('./pages/Profile'));
 
 const App: React.FC = () => {
   return (
@@ -24,12 +25,13 @@ const App: React.FC = () => {
             <Route path="/register" element={<Register />} />
 
             {/* Driver */}
-            <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-            <Route path="/lot/:id" element={<ProtectedRoute><LotDetail /></ProtectedRoute>} />
-            <Route path="/bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute allowedRoles={['driver']}><Search /></ProtectedRoute>} />
+            <Route path="/lot/:id" element={<ProtectedRoute allowedRoles={['driver', 'owner']}><LotDetail /></ProtectedRoute>} />
+            <Route path="/bookings" element={<ProtectedRoute allowedRoles={['driver']}><MyBookings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute allowedRoles={['driver']}><Profile /></ProtectedRoute>} />
 
             {/* Owner */}
-            <Route path="/owner" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerDashboard /></ProtectedRoute>} />
+            <Route path="/owner" element={<ProtectedRoute allowedRoles={['owner']}><OwnerDashboard /></ProtectedRoute>} />
 
             {/* Admin */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />

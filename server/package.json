@@ -1,7 +1,7 @@
 {
-  "name": "server",
+  "name": "parkit-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "ParkIt Smart Parking Management System — Backend API Server",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,8 +9,8 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["parking", "smart-parking", "node", "express", "sequelize", "razorpay"],
+  "author": "ParkIt Team",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

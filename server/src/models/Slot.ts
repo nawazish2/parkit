@@ -33,6 +33,9 @@ Slot.init(
     sequelize,
     tableName: 'slots',
     timestamps: true,
+    indexes: [
+      { fields: ['lotId'] },
+    ],
   }
 );
 

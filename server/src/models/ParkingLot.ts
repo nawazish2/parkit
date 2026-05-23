@@ -38,7 +38,7 @@ ParkingLot.init(
       allowNull: false,
     },
     pricePerHour: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
     status: {
@@ -58,6 +58,11 @@ ParkingLot.init(
     sequelize,
     tableName: 'parking_lots',
     timestamps: true,
+    indexes: [
+      { fields: ['ownerId'] },
+      { fields: ['city'] },
+      { fields: ['status'] },
+    ],
   }
 );
 
