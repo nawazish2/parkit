@@ -25,9 +25,20 @@ export const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully.');
-    // Only alter tables in development — use migrations in production
-    await sequelize.sync({ alter: process.env.NODE_ENV !== 'production' });
-    console.log('✅ Models synchronized.');
+    
+    const forceSync = process.env.FORCE_DB_SYNC === 'true';
+    if (forceSync) {
+      console.log('⚠️ FORCE_DB_SYNC is enabled! Recreating all database tables...');
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
+      await sequelize.sync({ force: true });
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+      console.log('✅ Database tables recreated.');
+    } else {
+      // Only alter tables in development — use migrations in production
+      await sequelize.sync({ alter: process.env.NODE_ENV !== 'production' });
+      console.log('✅ Models synchronized.');
+    }
+
     const { seedDatabase } = require('./seed');
     await seedDatabase();
   } catch (error) {
