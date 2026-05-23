@@ -3,10 +3,19 @@ import http from 'http';
 
 let ioInstance: SocketIOServer | null = null;
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://parkit-kappa.vercel.app',
+];
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(...process.env.CLIENT_URL.split(',').map(s => s.trim()));
+}
+
 export const initSocket = (server: http.Server): SocketIOServer => {
   ioInstance = new SocketIOServer(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
     },
   });
