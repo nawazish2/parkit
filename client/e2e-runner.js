@@ -53,9 +53,10 @@ async function runTests() {
     await page.waitForTimeout(1000);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '02_login_page.png') });
 
-    // Use Quick Demo Login for Driver
+    // Fill credentials manually
     console.log('Logging in as Driver...');
-    await page.click('button:has-text("Driver")');
+    await page.fill('#login-email', 'driver@demo.com');
+    await page.fill('#login-password', 'demo123');
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03_login_driver_filled.png') });
 
@@ -210,7 +211,8 @@ async function runTests() {
     // STEP 7: Owner Flow (Add Lot)
     // ----------------------------------------------------
     console.log('\n--- Step 7: Owner Flow ---');
-    await page.click('button:has-text("Owner")');
+    await page.fill('#login-email', 'owner@demo.com');
+    await page.fill('#login-password', 'demo123');
     await page.waitForTimeout(500);
     await page.click('#login-submit');
     await page.waitForURL('**/owner');
@@ -258,7 +260,8 @@ async function runTests() {
     // STEP 8: Admin Flow (Approve Lot)
     // ----------------------------------------------------
     console.log('\n--- Step 8: Admin Flow ---');
-    await page.click('button:has-text("Admin")');
+    await page.fill('#login-email', 'admin@demo.com');
+    await page.fill('#login-password', 'demo123');
     await page.waitForTimeout(500);
     await page.click('#login-submit');
     await page.waitForURL('**/admin');
