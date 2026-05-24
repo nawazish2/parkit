@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Car, ShieldCheck, Zap, QrCode, ArrowRight, Sparkles,
   Clock, MapPin, CreditCard, ChevronRight, Users, Building2,
-  TrendingUp, HelpCircle, Check, Terminal, Lock, CheckCircle2, Shield
+  TrendingUp, Check, Terminal, Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
