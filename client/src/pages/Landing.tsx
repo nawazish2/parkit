@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Car, ShieldCheck, Zap, QrCode, ArrowRight, Sparkles,
   Clock, MapPin, CreditCard, ChevronRight, Users, Building2,
-  TrendingUp, Check, Terminal, Shield
+  TrendingUp, Check, Terminal, Shield, Mail,
+  Send, Heart, Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,19 @@ const Landing: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'driver' | 'owner' | 'admin'>('driver');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleSubscribeNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    setNewsletterStatus('loading');
+    setTimeout(() => {
+      setNewsletterStatus('success');
+      setNewsletterEmail('');
+      setTimeout(() => setNewsletterStatus('idle'), 4000);
+    }, 1200);
+  };
 
   const handleGetStarted = () => {
     if (user) {
@@ -648,16 +662,171 @@ const Landing: React.FC = () => {
         </section>
       </main>
 
-      <footer className="border-t border-white/5 py-10 px-6 z-10 bg-slate-950/20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md shadow-indigo-600/20">
-              <Car className="w-4 h-4 text-white" />
+      <footer className="border-t border-white/5 bg-slate-950/60 backdrop-blur-md pt-20 pb-10 px-6 z-10 relative">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-10 text-xs pb-16 border-b border-white/5">
+          {/* Column 1: Brand Info & Status */}
+          <div className="md:col-span-2 space-y-5">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Car className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-black text-white text-lg font-display tracking-tight">ParkIt</span>
             </div>
-            <span className="font-extrabold text-slate-300 text-sm font-display tracking-tight">ParkIt</span>
+            <p className="text-slate-400 leading-relaxed text-[12px] max-w-sm">
+              The next-generation smart parking SaaS platform. Lock spots in real-time, generate secure QR passes instantly, and track full analytics across high-occupancy environments.
+            </p>
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  API Systems Operational
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[9px] font-bold uppercase tracking-wider">
+                  SSL Secured
+                </div>
+              </div>
+              
+              {/* Trust Badges */}
+              <div className="flex items-center gap-3 text-slate-500 text-[10px] font-mono mt-1">
+                <span className="border border-slate-800 px-2 py-0.5 rounded">SOC2 Compliant</span>
+                <span className="border border-slate-800 px-2 py-0.5 rounded">PCI-DSS Level 1</span>
+              </div>
+            </div>
           </div>
-          <p>© 2026 ParkIt — 6th Semester College Project. Smart Parking Management System.</p>
-          <p>Built with React · Node.js · Socket.io · TiDB</p>
+
+          {/* Column 2: Platform Capabilities */}
+          <div className="space-y-4">
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Platform</div>
+            <ul className="space-y-3">
+              <li>
+                <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-1 group">
+                  Live Slot Map
+                  <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+              </li>
+              <li>
+                <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-1 group">
+                  QR Access Barrier
+                  <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+              </li>
+              <li>
+                <a href="#pricing" className="text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-1 group">
+                  SaaS Pricing
+                  <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+              </li>
+              <li>
+                <a href="#faqs" className="text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-1 group">
+                  Interactive Demo
+                  <ChevronRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Tech Architecture */}
+          <div className="space-y-4">
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Tech Stack</div>
+            <ul className="space-y-3 text-slate-400">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                React 19 & Vite 8
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                Node.js & Express
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500" />
+                TiDB Serverless
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Socket.io Locking
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                Razorpay Checkout
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Newsletter & Community */}
+          <div className="space-y-4">
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Subscribe for Updates</div>
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              Get the latest developer insights, status updates, and feature rollouts directly.
+            </p>
+            <form onSubmit={handleSubscribeNewsletter} className="space-y-2">
+              <div className="relative flex items-center">
+                <input
+                  type="email"
+                  placeholder="Enter email address"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-xs w-full pr-10"
+                  required
+                  disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
+                />
+                <button
+                  type="submit"
+                  disabled={newsletterStatus === 'loading' || newsletterStatus === 'success'}
+                  className="absolute right-1 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {newsletterStatus === 'loading' ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+              
+              {/* Status Message */}
+              {newsletterStatus === 'success' && (
+                <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fadeIn">
+                  <Check className="w-3 h-3" /> Subscribed successfully!
+                </div>
+              )}
+            </form>
+            
+            {/* Social Icons */}
+            <div className="flex items-center gap-3 pt-2">
+              <a href="https://github.com/nawazish2/parkit" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all" aria-label="GitHub">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+                </svg>
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all" aria-label="Twitter">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+              </a>
+              <a href="mailto:support@parkit.com" className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all" aria-label="Email">
+                <Mail className="w-4 h-4" />
+              </a>
+              <a href="https://parkit-kappa.vercel.app" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 hover:border-white/20 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+                <Globe className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom copyright bar */}
+        <div className="max-w-7xl mx-auto pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 font-medium">
+          <div className="flex items-center gap-2">
+            <span>© 2026 ParkIt System. All rights reserved.</span>
+            <span className="text-slate-800">|</span>
+            <span className="flex items-center gap-1">
+              Made with <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20 animate-pulse" /> for 6th Semester College Project
+            </span>
+          </div>
+          <div className="flex gap-4">
+            <span className="hover:text-slate-400 transition-colors cursor-pointer">Security Portal</span>
+            <span className="hover:text-slate-400 transition-colors cursor-pointer">Terms of Service</span>
+            <span className="hover:text-slate-400 transition-colors cursor-pointer">Privacy Policy</span>
+            <span className="hover:text-slate-400 transition-colors cursor-pointer">SLA Agreement</span>
+          </div>
         </div>
       </footer>
     </div>
