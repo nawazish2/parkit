@@ -133,15 +133,16 @@ const Search: React.FC = () => {
   }, [lots, sortBy, maxPrice, selectedAmenities]);
 
   return (
-    <div className="min-h-screen bg-[#06060a] text-white flex flex-col">
+    <div className="min-h-screen bg-[#06060a] text-white flex flex-col relative overflow-hidden bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+      {/* Ambient background blobs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[600px] bg-gradient-to-b from-indigo-500/15 via-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 -left-48 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-2/3 -right-48 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
+
       <Navbar />
 
       {/* Hero search section */}
-      <div className="relative overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-64 bg-gradient-to-b from-indigo-600/10 to-transparent rounded-full blur-3xl" />
-        </div>
+      <div className="relative overflow-hidden z-10">
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-10 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-5">
@@ -289,7 +290,7 @@ const Search: React.FC = () => {
       </div>
 
       {/* Results section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-20 flex-1">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-20 flex-1 relative z-10">
         {/* Results header */}
         {!loading && searched && (
           <div className="flex items-center justify-between mb-6 animate-fadeIn flex-wrap gap-4">
