@@ -162,8 +162,9 @@ const Profile: React.FC = () => {
         </Button>
 
         <Card className="p-6 relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border-white/[0.06] bg-[#111118] rounded-xl">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
           <div className="flex items-center gap-4 z-10">
-            <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center text-2xl font-bold text-white">
+            <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-blue-900/20">
               {(user.name?.[0] || '?').toUpperCase()}
             </div>
             <div className="space-y-1">
@@ -190,7 +191,7 @@ const Profile: React.FC = () => {
 
         <section className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2 tracking-tight">
               <Car className="w-5 h-5 text-blue-500" />
               Saved Vehicles
               {vehicles.length > 0 && (
@@ -207,7 +208,8 @@ const Profile: React.FC = () => {
           </div>
 
           {vehicles.length === 0 ? (
-            <Card className="p-10 text-center space-y-3 bg-[#111118] border border-white/[0.06] rounded-xl max-w-md mx-auto">
+            <Card className="p-10 text-center space-y-3 bg-[#111118] border border-white/[0.06] rounded-xl max-w-md mx-auto relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
               <CardContent className="p-0 space-y-3">
                 <div className="w-12 h-12 bg-blue-500/15 rounded-xl flex items-center justify-center mx-auto border border-blue-500/25">
                   <Car className="w-6 h-6 text-blue-400" />
@@ -231,7 +233,7 @@ const Profile: React.FC = () => {
               {vehicles.map((vehicle) => (
                 <Card
                   key={vehicle.plate}
-                  className={`bg-[#111118] border-white/[0.06] rounded-xl p-4 flex justify-between items-center transition-colors ${
+                  className={`bg-[#111118] border-white/[0.06] rounded-xl p-4 flex justify-between items-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/15 ${
                     vehicle.isDefault ? 'border-emerald-500/25 bg-emerald-500/[0.03]' : 'hover:border-white/[0.12]'
                   }`}
                 >
@@ -245,7 +247,7 @@ const Profile: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">
+                        <span className="font-bold text-white text-sm tracking-tight">
                           {vehicle.label || `${vehicle.type}`}
                         </span>
                         {vehicle.isDefault && (

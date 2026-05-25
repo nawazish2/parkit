@@ -71,8 +71,14 @@ const LotDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="w-full max-w-4xl space-y-4 animate-fadeIn">
+            <div className="h-28 rounded-2xl border border-white/[0.06] bg-[#111118] animate-pulse" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 h-[28rem] rounded-2xl border border-white/[0.06] bg-[#111118] animate-pulse" />
+              <div className="h-[28rem] rounded-2xl border border-white/[0.06] bg-[#111118] animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -172,7 +172,7 @@ const Search: React.FC = () => {
           ))}
         </div>
 
-        <div className="max-w-2xl mx-auto mt-5 p-4 rounded-xl border border-white/[0.06] bg-[#111118]/95 backdrop-blur-sm space-y-4 animate-fadeIn shadow-xl shadow-black/10 sticky top-[11.5rem] z-20 sm:static sm:top-auto">
+        <div className="max-w-2xl mx-auto mt-5 p-4 rounded-xl border border-white/[0.06] bg-[#111118]/95 backdrop-blur-sm space-y-4 animate-fadeIn shadow-xl shadow-black/10 sticky top-[11.5rem] z-20 sm:static sm:top-auto ring-1 ring-white/[0.02]">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
             <span className="text-xs font-semibold text-slate-300">Filters & Sort</span>
             {(sortBy !== 'none' || maxPrice !== 200 || selectedAmenities.length > 0) && (
@@ -194,11 +194,11 @@ const Search: React.FC = () => {
             <div className="space-y-3">
               <div className="flex flex-col gap-1 text-left">
                 <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Sort Results</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-[#111118] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 w-full"
-                >
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-[#111118] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 w-full shadow-inner shadow-black/10"
+                  >
                   <option value="none">Default</option>
                   <option value="price_asc">Price: Low to High</option>
                   <option value="price_desc">Price: High to Low</option>
@@ -218,7 +218,7 @@ const Search: React.FC = () => {
                   step="10"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="w-full accent-blue-500 bg-white/[0.06] h-1.5 rounded-lg appearance-none cursor-pointer"
+                  className="w-full accent-blue-500 bg-white/[0.06] h-1.5 rounded-lg appearance-none cursor-pointer shadow-inner shadow-black/10"
                 />
               </div>
             </div>
@@ -239,11 +239,11 @@ const Search: React.FC = () => {
                             : [...prev, amenity]
                         );
                       }}
-                      className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-blue-600/20 border-blue-500/40 text-white'
-                          : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] text-slate-400 hover:text-slate-300'
-                      }`}
+                    className={`text-[10px] font-semibold px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer shadow-sm ${
+                      isSelected
+                        ? 'bg-blue-600/20 border-blue-500/40 text-white'
+                        : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] text-slate-400 hover:text-slate-300'
+                    }`}
                     >
                       {amenity}
                     </button>
@@ -359,7 +359,7 @@ const Search: React.FC = () => {
                     key={lot.id}
                     id={`lot-card-${lot.id}`}
                     onClick={() => navigate(`/lot/${lot.id}`)}
-                    className="bg-[#111118] border-white/[0.06] hover:border-white/[0.12] transition-colors cursor-pointer group flex flex-col justify-between h-full rounded-xl"
+                    className="bg-[#111118] border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer group flex flex-col justify-between h-full rounded-xl hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20"
                     style={{ animationDelay: `${i * 0.05}s` }}
                   >
                     <CardHeader className="p-5 pb-3">

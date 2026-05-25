@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Zap, QrCode, CreditCard, ArrowRight, Search, BarChart3, Menu, X } from 'lucide-react';
+import { Car, Zap, QrCode, CreditCard, ArrowRight, Search, BarChart3, Menu, X, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Landing: React.FC = () => {
@@ -101,13 +101,14 @@ const Landing: React.FC = () => {
       </header>
 
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300 mb-6">
+      <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative">
+        <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs text-blue-100 mb-6 shadow-[0_0_0_1px_rgba(37,99,235,0.08)]">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           Live parking, secure checkout, instant QR access
         </div>
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] max-w-3xl">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] max-w-4xl">
           Park smarter.
+          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-white to-violet-400">Book faster.</span>
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed">
           Real-time slot booking with QR access. Find parking, pay securely, and walk in — no hassle.
@@ -136,6 +137,24 @@ const Landing: React.FC = () => {
             <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-left backdrop-blur-sm">
               <div className="text-xl font-bold text-white">{value}</div>
               <div className="text-xs text-slate-400 mt-1">{label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 md:px-8 pb-8 md:pb-14">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { icon: Sparkles, title: 'Cleaner booking flow', text: 'Fewer clicks from search to reservation.' },
+            { icon: ShieldCheck, title: 'Trust cues', text: 'Verified lots and security-first presentation.' },
+            { icon: CreditCard, title: 'Payment clarity', text: 'Rates, duration, and total are easier to scan.' },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-left backdrop-blur-sm">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/20 flex items-center justify-center mb-3">
+                <Icon className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="text-sm font-semibold text-white">{title}</div>
+              <div className="mt-1 text-xs text-slate-400 leading-relaxed">{text}</div>
             </div>
           ))}
         </div>

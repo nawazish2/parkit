@@ -501,11 +501,11 @@ const MyBookings: React.FC = () => {
             { label: 'Total', value: bookings.length, color: 'text-blue-400', bg: 'bg-blue-500/15 border-blue-500/25' },
             { label: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: 'text-rose-400', bg: 'bg-rose-500/15 border-rose-500/25' },
           ].map(stat => (
-            <Card key={stat.label} className={`border ${stat.bg} p-3.5 text-center bg-[#111118] rounded-lg relative overflow-hidden`}>
+            <Card key={stat.label} className={`border ${stat.bg} p-3.5 text-center bg-[#111118] rounded-lg relative overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20`}>
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
               <CardContent className="p-0">
-                <div className={`text-xl font-bold ${stat.color}`}>{stat.value}</div>
-                <div className="text-[11px] text-slate-400 font-medium mt-0.5">{stat.label}</div>
+                <div className={`text-xl font-bold tracking-tight ${stat.color}`}>{stat.value}</div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5 leading-relaxed">{stat.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -519,7 +519,7 @@ const MyBookings: React.FC = () => {
         )}
 
         <section className="space-y-4">
-          <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3">
+          <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3 tracking-tight">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             Active Passes
             {activeBookings.length > 0 && (
@@ -554,7 +554,7 @@ const MyBookings: React.FC = () => {
                 <Card
                   key={booking.id}
                   onClick={() => setSelectedBookingForReceipt(booking)}
-                  className="bg-[#111118] border-white/[0.06] border-l-2 border-l-emerald-500 rounded-xl p-5 hover:border-white/[0.12] transition-colors animate-fadeIn cursor-pointer relative overflow-hidden"
+                className="bg-[#111118] border-white/[0.06] border-l-2 border-l-emerald-500 rounded-xl p-5 hover:border-white/[0.12] transition-all duration-200 animate-fadeIn cursor-pointer relative overflow-hidden hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20"
                   style={{ animationDelay: `${i * 0.06}s` }}
                 >
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
@@ -608,14 +608,14 @@ const MyBookings: React.FC = () => {
                   </CardContent>
 
                   <div className="flex flex-wrap items-center gap-2.5 mt-5">
-                  <Button
-                    id={`show-qr-${booking.id}`}
-                    onClick={(e) => { e.stopPropagation(); setSelectedQR(booking); }}
-                    aria-label={`Show QR pass for booking ${booking.id}`}
-                    className="bg-blue-600 hover:bg-blue-500 text-white flex-1 min-w-[7.5rem] flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer"
-                  >
-                      <QrCode className="w-3.5 h-3.5" />
-                      Show Pass
+                    <Button
+                      id={`show-qr-${booking.id}`}
+                      onClick={(e) => { e.stopPropagation(); setSelectedQR(booking); }}
+                      aria-label={`Show QR pass for booking ${booking.id}`}
+                      className="bg-blue-600 hover:bg-blue-500 text-white flex-1 min-w-[7.5rem] flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer"
+                    >
+                       <QrCode className="w-3.5 h-3.5" />
+                       Show Pass
                     </Button>
 
                     {getCountdownText(booking.startTime, booking.endTime).text !== 'Session Ended' && (
@@ -671,7 +671,7 @@ const MyBookings: React.FC = () => {
 
         {pastOrCancelled.length > 0 && (
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3">
+            <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3 tracking-tight">
               <Clock className="w-4 h-4 text-slate-400" />
               History
               <Badge variant="outline" className="border-white/[0.10] text-slate-400 font-semibold ml-1 rounded-md text-[10px]">{pastOrCancelled.length}</Badge>
@@ -682,7 +682,7 @@ const MyBookings: React.FC = () => {
                 <Card
                   key={booking.id}
                   onClick={() => setSelectedBookingForReceipt(booking)}
-                  className="p-3.5 flex items-center justify-between gap-3 opacity-60 hover:opacity-100 hover:border-white/[0.12] cursor-pointer transition-all border-white/[0.06] bg-[#111118] rounded-lg group"
+                  className="p-3.5 flex items-center justify-between gap-3 opacity-60 hover:opacity-100 hover:border-white/[0.12] cursor-pointer transition-all duration-200 border-white/[0.06] bg-[#111118] rounded-lg group hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/15"
                 >
                   <CardContent className="p-0 flex items-center justify-between w-full gap-3">
                     <div className="flex items-center gap-3 min-w-0">

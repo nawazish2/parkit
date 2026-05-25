@@ -58,8 +58,8 @@ const Navbar: React.FC = () => {
               to={link.to}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive(link.to)
-                  ? 'text-white border-b-2 border-blue-500'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'text-white bg-white/[0.05] border border-white/[0.08] shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
               }`}
             >
               {link.icon}
@@ -120,6 +120,7 @@ const Navbar: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setMobileOpen(o => !o)}
+            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="md:hidden p-2 rounded-lg bg-white/5 border border-white/[0.06] text-slate-400 hover:text-white cursor-pointer"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

@@ -239,7 +239,7 @@ const OwnerDashboard: React.FC = () => {
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white">Owner Dashboard</h1>
             </div>
-            <p className="text-slate-400 text-sm ml-[52px]">Monitor earnings, occupancy, and manage properties</p>
+            <p className="text-slate-400 text-sm ml-[52px] max-w-xl leading-relaxed">Monitor earnings, occupancy, and manage properties</p>
             <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               Live revenue and slot usage
@@ -289,8 +289,8 @@ const OwnerDashboard: React.FC = () => {
               <Card
                 key={card.label}
                 onClick={card.onClick}
-                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] ${
-                  isClickable ? 'cursor-pointer hover:border-blue-500/30 transition-colors' : ''
+                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20 ${
+                  isClickable ? 'cursor-pointer hover:border-blue-500/30' : ''
                 }`}
               >
                 <div className="flex justify-between items-center mb-3">
@@ -299,15 +299,15 @@ const OwnerDashboard: React.FC = () => {
                     {card.icon}
                   </div>
                 </div>
-                <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
-                <div className="text-xs text-slate-500 mt-1 font-medium">{card.sub}</div>
+                <div className={`text-2xl font-bold tracking-tight ${card.color}`}>{card.value}</div>
+                <div className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{card.sub}</div>
               </Card>
             );
           })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <Card className="lg:col-span-2 p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden">
+            <Card className="lg:col-span-2 p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -382,7 +382,7 @@ const OwnerDashboard: React.FC = () => {
             </div>
           </Card>
 
-            <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden">
+            <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
             <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-5">
               <Package className="w-5 h-5 text-violet-500" />
@@ -410,7 +410,7 @@ const OwnerDashboard: React.FC = () => {
                   <Card
                     key={lot.id}
                     onClick={() => navigate(`/lot/${lot.id}`)}
-                    className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg hover:border-violet-500/30 transition-colors group cursor-pointer"
+                    className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-lg hover:border-violet-500/30 transition-all duration-200 group cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -440,7 +440,7 @@ const OwnerDashboard: React.FC = () => {
           </Card>
         </div>
 
-        <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden">
+          <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
           <CardTitle className="text-lg font-bold text-white flex items-center justify-between mb-4">
             <span className="flex items-center gap-2">

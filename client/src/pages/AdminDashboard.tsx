@@ -182,13 +182,13 @@ const AdminDashboard: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-6 mt-6 relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 bg-rose-500/15 rounded-lg flex items-center justify-center border border-rose-500/25">
                 <Shield className="w-5 h-5 text-rose-400" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Admin Panel</h1>
             </div>
-            <p className="text-slate-400 text-sm ml-[52px]">
+            <p className="text-slate-400 text-sm ml-[52px] max-w-xl leading-relaxed">
               Platform oversight, approvals, and user management
             </p>
             <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
@@ -229,9 +229,9 @@ const AdminDashboard: React.FC = () => {
               <Card
                 key={card.label}
                 onClick={card.onClick}
-                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] relative overflow-hidden ${
+                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] relative overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20 ${
                   isClickable
-                    ? 'cursor-pointer hover:border-rose-500/30 transition-colors'
+                    ? 'cursor-pointer hover:border-rose-500/30'
                     : ''
                 }`}
               >
@@ -244,9 +244,9 @@ const AdminDashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
+                <div className={`text-2xl font-bold tracking-tight ${card.color}`}>{card.value}</div>
                 {card.subtext && (
-                  <div className={`text-xs mt-1 ${
+                  <div className={`text-xs mt-1 leading-relaxed ${
                     card.label === 'Pending Approvals' && (stats?.pendingLots?.length ?? 0) > 0
                       ? 'text-amber-400 font-semibold'
                       : 'text-slate-500'
