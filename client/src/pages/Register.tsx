@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Car, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff, Car as DriverIcon, Building2 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { toast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'driver' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +24,7 @@ const Register: React.FC = () => {
     try {
       const res = await api.post('/auth/register', form);
       login(res.data.token, res.data.user);
+      toast({ title: 'Account created', description: 'Your profile is ready.', variant: 'success' });
       const role = res.data.user.role;
       if (role === 'owner') navigate('/owner');
       else navigate('/search');
@@ -38,7 +41,7 @@ const Register: React.FC = () => {
       label: 'Driver',
       desc: 'Search & book parking slots',
       icon: <DriverIcon className="w-5 h-5" />,
-      color: 'indigo',
+      color: 'blue',
     },
     {
       value: 'owner',
@@ -50,65 +53,57 @@ const Register: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#06060a]">
-      {/* Background blobs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 -left-48 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute bottom-1/4 -right-48 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="w-full max-w-md relative z-10 animate-slideUp">
-        {/* Logo */}
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0F]">
+      <div className="w-full max-w-md animate-slideUp">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
+          <Link to="/" className="inline-flex items-center gap-2.5 group">
+            <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center">
               <Car className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-black bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent font-display tracking-tight">ParkIt</span>
+            <span className="text-xl font-bold text-white tracking-tight">ParkIt</span>
           </Link>
         </div>
 
-        <Card className="border-white/10 bg-slate-900/40 backdrop-blur-2xl shadow-2xl overflow-hidden rounded-2xl">
+        <Card className="border-white/[0.06] bg-[#111118] shadow-xl overflow-hidden rounded-xl">
           <CardHeader className="space-y-1.5 pb-6">
-            <CardTitle className="text-2xl font-black text-white font-display tracking-tight">Create your account</CardTitle>
+            <CardTitle className="text-2xl font-bold text-white tracking-tight">Create your account</CardTitle>
             <CardDescription className="text-slate-400 text-sm">
-              Join the smarter parking platform today
+              Join the smarter parking platform
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl flex items-start gap-2 animate-fadeIn">
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm px-4 py-3 rounded-lg flex items-start gap-2 animate-fadeIn">
                 <span className="mt-0.5">⚠</span>
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Role selector */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">I am a...</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">I am a...</label>
                 <div className="grid grid-cols-2 gap-3">
                   {roleOptions.map(opt => (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => setForm({ ...form, role: opt.value })}
-                      className={`p-4 rounded-xl border text-left transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
+                      className={`p-4 rounded-lg border text-left transition-colors cursor-pointer ${
                         form.role === opt.value
-                          ? opt.color === 'indigo'
-                            ? 'bg-indigo-600/15 border-indigo-500/60 shadow-lg shadow-indigo-500/10'
-                            : 'bg-violet-600/15 border-violet-500/60 shadow-lg shadow-violet-500/10'
-                          : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/15'
+                          ? opt.color === 'blue'
+                            ? 'bg-blue-600/15 border-blue-500/50'
+                            : 'bg-violet-600/15 border-violet-500/50'
+                          : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.10]'
                       }`}
                     >
                       <div className={`mb-2 ${
                         form.role === opt.value
-                          ? opt.color === 'indigo' ? 'text-indigo-400' : 'text-violet-400'
+                          ? opt.color === 'blue' ? 'text-blue-400' : 'text-violet-400'
                           : 'text-slate-400'
                       }`}>
                         {opt.icon}
                       </div>
-                      <div className={`font-bold text-sm ${form.role === opt.value ? 'text-white' : 'text-slate-300'}`}>
+                      <div className={`font-semibold text-sm ${form.role === opt.value ? 'text-white' : 'text-slate-300'}`}>
                         {opt.label}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5">{opt.desc}</div>
@@ -117,16 +112,15 @@ const Register: React.FC = () => {
                 </div>
               </div>
 
-              {/* Full name */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                   <Input
                     id="register-name"
                     type="text"
                     placeholder="John Smith"
-                    className="pl-11 bg-slate-950/60 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 h-11"
+                    className="pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
                     required
@@ -134,16 +128,15 @@ const Register: React.FC = () => {
                 </div>
               </div>
 
-              {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                   <Input
                     id="register-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-11 bg-slate-950/60 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 h-11"
+                    className="pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
                     value={form.email}
                     onChange={e => setForm({ ...form, email: e.target.value })}
                     required
@@ -151,16 +144,15 @@ const Register: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
                   <Input
                     id="register-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Min 6 characters"
-                    className="pl-11 pr-11 bg-slate-950/60 border-white/10 text-white rounded-xl focus-visible:ring-indigo-500 h-11"
+                    className="pl-10 pr-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
                     value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
                     minLength={6}
@@ -169,7 +161,7 @@ const Register: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors z-10"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -179,7 +171,7 @@ const Register: React.FC = () => {
               <Button
                 id="register-submit"
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 mt-6 text-sm font-semibold rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-600/30 transition-all cursor-pointer h-11"
+                className="w-full flex items-center justify-center gap-2 mt-6 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-colors cursor-pointer h-10"
                 disabled={loading}
               >
                 {loading ? (
@@ -198,7 +190,7 @@ const Register: React.FC = () => {
 
             <p className="text-center text-slate-400 text-sm">
               Already have an account?{' '}
-              <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+              <Link to="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
                 Sign in →
               </Link>
             </p>

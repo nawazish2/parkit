@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ const MyBookings: React.FC = () => {
   const [extendBooking, setExtendBooking] = useState<Booking | null>(null);
   const [extendHours, setExtendHours] = useState<number>(1);
   const [extending, setExtending] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,7 +56,7 @@ const MyBookings: React.FC = () => {
       const secs = Math.floor((diff % (1000 * 60)) / 1000);
       return {
         text: `Starts in ${hours}h ${mins}m ${secs}s`,
-        className: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+        className: 'bg-blue-500/15 text-blue-400 border-blue-500/25'
       };
     } else if (current >= start && current <= end) {
       const diff = end - current;
@@ -64,19 +67,20 @@ const MyBookings: React.FC = () => {
       return {
         text: `${hours}h ${mins}m ${secs}s left`,
         className: isUrgent
-          ? 'bg-red-500/15 text-red-400 border-red-500/25 animate-pulse'
-          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          ? 'bg-rose-500/15 text-rose-400 border-rose-500/25 animate-pulse'
+          : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/25'
       };
     } else {
       return {
         text: 'Session Ended',
-        className: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+        className: 'bg-slate-500/15 text-slate-400 border-slate-500/25'
       };
     }
   };
 
   const fetchBookings = async () => {
     setError('');
+    setFeedback('');
     try {
       const res = await api.get('/bookings');
       setBookings(res.data);
@@ -86,10 +90,10 @@ const MyBookings: React.FC = () => {
       console.error('Failed to fetch bookings', err);
       const cached = localStorage.getItem('parkit_bookings_cache');
       if (cached) {
-        try { setBookings(JSON.parse(cached)); } catch { setError('Cached data is corrupted. Please refresh.'); }
+        try { setBookings(JSON.parse(cached)); } catch { setError('Cached data is corrupted.'); }
         setIsOfflineMode(true);
       } else {
-        setError('Failed to load bookings. Please refresh.');
+        setError('Failed to load bookings.');
       }
     } finally {
       setLoading(false);
@@ -103,11 +107,15 @@ const MyBookings: React.FC = () => {
   const handleCancel = async (bookingId: number) => {
     setCancellingId(bookingId);
     setConfirmCancelId(null);
+    setFeedback('');
     try {
       await api.put(`/bookings/${bookingId}/cancel`);
       await fetchBookings();
+      setFeedback('Booking cancelled.');
+      toast({ title: 'Booking cancelled', description: 'Your reservation was cancelled.', variant: 'success' });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to cancel booking');
+      toast({ title: 'Cancel failed', description: err.response?.data?.message || 'Failed to cancel booking', variant: 'error' });
     } finally {
       setCancellingId(null);
     }
@@ -117,6 +125,7 @@ const MyBookings: React.FC = () => {
     if (!extendBooking) return;
     setExtending(true);
     setError('');
+    setFeedback('');
 
     try {
       const orderRes = await api.post('/payment/extend-order', {
@@ -137,7 +146,8 @@ const MyBookings: React.FC = () => {
         await fetchBookings();
         setExtendBooking(null);
         setExtending(false);
-        // Extension succeeded — bookings already refreshed
+        setFeedback('Reservation extended.');
+        toast({ title: 'Reservation extended', description: 'Your booking has been extended.', variant: 'success' });
         return;
       }
 
@@ -146,7 +156,7 @@ const MyBookings: React.FC = () => {
         amount: order.amount,
         currency: order.currency,
         name: 'ParkIt Extension',
-        description: `Extend booking for Slot ${extendBooking.slot?.slotNumber} by ${extendHours} hrs`,
+        description: `Extend slot ${extendBooking.slot?.slotNumber} by ${extendHours} hrs`,
         order_id: order.id,
         handler: async (response: any) => {
           try {
@@ -160,10 +170,12 @@ const MyBookings: React.FC = () => {
             await fetchBookings();
             setExtendBooking(null);
             setExtending(false);
-            // Extension succeeded — bookings already refreshed
+            setFeedback('Reservation extended.');
+            toast({ title: 'Reservation extended', description: 'Your booking has been extended.', variant: 'success' });
           } catch (verErr) {
             console.error('Extension verification failed', verErr);
-            setError('Extension verification failed. Please contact support.');
+            setError('Extension verification failed.');
+            toast({ title: 'Extend failed', description: 'Could not verify extension payment.', variant: 'error' });
           }
         },
         modal: {
@@ -181,6 +193,7 @@ const MyBookings: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to extend session');
       setExtending(false);
+      toast({ title: 'Extend failed', description: err.response?.data?.message || 'Failed to extend session', variant: 'error' });
     }
   };
 
@@ -197,7 +210,7 @@ const MyBookings: React.FC = () => {
 
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
-      alert('Pop-up blocker is active. Please enable pop-ups to print the receipt.');
+      alert('Pop-up blocker is active. Please enable pop-ups to print.');
       return;
     }
 
@@ -210,7 +223,7 @@ const MyBookings: React.FC = () => {
         <title>ParkIt Receipt - #PK-${booking.id}</title>
         <style>
           body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #333;
             background-color: #fff;
             padding: 40px;
@@ -226,7 +239,7 @@ const MyBookings: React.FC = () => {
           .title {
             font-size: 24px;
             font-weight: 800;
-            color: #4f46e5;
+            color: #2563eb;
             letter-spacing: 1px;
             margin: 0 0 5px 0;
           }
@@ -249,7 +262,7 @@ const MyBookings: React.FC = () => {
           .details-card {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 16px;
           }
           .row {
@@ -269,10 +282,10 @@ const MyBookings: React.FC = () => {
             color: #111;
           }
           .slot-badge {
-            background-color: #e0e7ff;
-            color: #4338ca;
+            background-color: #dbeafe;
+            color: #2563eb;
             padding: 2px 8px;
-            border-radius: 6px;
+            border-radius: 4px;
             font-family: monospace;
             font-weight: 700;
           }
@@ -284,7 +297,7 @@ const MyBookings: React.FC = () => {
           .time-col {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 16px;
           }
           .time-label {
@@ -295,7 +308,7 @@ const MyBookings: React.FC = () => {
           .time-val {
             font-size: 16px;
             font-weight: 800;
-            color: #4f46e5;
+            color: #2563eb;
             margin-top: 4px;
           }
           .time-date {
@@ -426,11 +439,16 @@ const MyBookings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#06060a] text-white flex flex-col">
+      <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-          <span className="text-slate-400 font-medium">Loading your bookings...</span>
+        <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-24 rounded-lg border border-white/[0.06] bg-[#111118] animate-pulse" />
+            ))}
+          </div>
+          <div className="h-64 rounded-xl border border-white/[0.06] bg-[#111118] animate-pulse" />
+          <div className="h-64 rounded-xl border border-white/[0.06] bg-[#111118] animate-pulse" />
         </div>
       </div>
     );
@@ -440,207 +458,208 @@ const MyBookings: React.FC = () => {
   const pastOrCancelled = bookings.filter(b => b.status !== 'confirmed');
 
   return (
-    <div className="min-h-screen bg-[#06060a] text-white flex flex-col pb-20 relative overflow-hidden bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
-      {/* Ambient background blobs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[600px] bg-gradient-to-b from-indigo-500/15 via-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 -left-48 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-2/3 -right-48 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col pb-16">
       <Navbar />
 
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[-6rem] top-24 h-80 w-80 rounded-full bg-blue-600/10 blur-3xl" />
+        <div className="absolute right-[-5rem] top-[24rem] h-96 w-96 rounded-full bg-emerald-600/10 blur-3xl" />
+      </div>
+
       {isOfflineMode && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-400 px-4 py-3 text-center text-xs font-semibold backdrop-blur-md flex items-center justify-center gap-2 animate-fadeIn">
-          <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse" />
-          You are currently viewing offline cached passes. Some details or actions may be unavailable.
+        <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-400 px-4 py-2.5 text-center text-xs font-medium flex items-center justify-center gap-2 animate-fadeIn">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Viewing offline cached data. Some actions may be unavailable.
         </div>
       )}
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-10 mt-6 relative z-10">
-        {/* Header */}
+      {feedback && !error && (
+        <div role="status" aria-live="polite" className="bg-blue-500/10 border-b border-blue-500/20 text-blue-300 px-4 py-2.5 text-center text-xs font-medium flex items-center justify-center gap-2 animate-fadeIn">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          {feedback}
+        </div>
+      )}
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-8 mt-6 relative z-10">
         <div className="animate-slideUp">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 bg-indigo-500/15 rounded-2xl flex items-center justify-center border border-indigo-500/20">
-              <Calendar className="w-5 h-5 text-indigo-400" />
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-9 h-9 bg-blue-500/15 rounded-lg flex items-center justify-center border border-blue-500/25">
+              <Calendar className="w-5 h-5 text-blue-400" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white font-display">My Bookings & Passes</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">My Bookings</h1>
           </div>
-          <p className="text-slate-400 text-sm ml-13">Manage your active reservations and access QR entry passes</p>
+          <p className="text-slate-400 text-xs ml-[46px]">Manage active reservations and access QR passes</p>
+          <div className="ml-[46px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            Active sessions, receipts, and extensions in one place
+          </div>
         </div>
 
-        {/* Summary bar */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Active Passes', value: activeBookings.length, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-            { label: 'Total Bookings', value: bookings.length, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
-            { label: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+            { label: 'Active', value: activeBookings.length, color: 'text-emerald-500', bg: 'bg-emerald-500/15 border-emerald-500/25' },
+            { label: 'Total', value: bookings.length, color: 'text-blue-400', bg: 'bg-blue-500/15 border-blue-500/25' },
+            { label: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: 'text-rose-400', bg: 'bg-rose-500/15 border-rose-500/25' },
           ].map(stat => (
-            <Card key={stat.label} className={`border ${stat.bg} p-4 text-center bg-slate-950/40 backdrop-blur-2xl rounded-2xl shadow-lg`}>
+            <Card key={stat.label} className={`border ${stat.bg} p-3.5 text-center bg-[#111118] rounded-lg relative overflow-hidden`}>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
               <CardContent className="p-0">
-                <div className={`text-2xl font-black font-display ${stat.color}`}>{stat.value}</div>
-                <div className="text-xs text-slate-400 font-medium mt-0.5">{stat.label}</div>
+                <div className={`text-xl font-bold ${stat.color}`}>{stat.value}</div>
+                <div className="text-[11px] text-slate-400 font-medium mt-0.5">{stat.label}</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Error state */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl flex items-center gap-2">
+          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-3.5 py-2.5 rounded-lg flex items-center gap-2 text-sm">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         )}
 
-        {/* Active Bookings Section */}
-        <section className="space-y-5">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2.5 border-b border-white/5 pb-4 font-display">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+        <section className="space-y-4">
+          <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             Active Passes
             {activeBookings.length > 0 && (
-              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-bold ml-1 rounded-full">{activeBookings.length}</Badge>
+              <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/25 font-semibold ml-1 rounded-md text-[10px]">{activeBookings.length}</Badge>
             )}
           </h2>
 
           {activeBookings.length === 0 ? (
-            <Card className="p-14 text-center space-y-4 bg-slate-950/40 border border-white/5 backdrop-blur-2xl rounded-2xl shadow-xl max-w-md mx-auto animate-fadeIn">
-              <CardContent className="p-0 space-y-4">
-                <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20 shadow-inner">
-                  <Ticket className="w-8 h-8 text-indigo-400 animate-pulse" />
+            <Card className="p-10 text-center space-y-3 bg-[#111118] border border-white/[0.06] rounded-xl max-w-md mx-auto animate-fadeIn relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
+              <CardContent className="p-0 space-y-3">
+                <div className="w-12 h-12 bg-blue-500/15 rounded-xl flex items-center justify-center mx-auto border border-blue-500/25">
+                  <Ticket className="w-6 h-6 text-blue-400" />
                 </div>
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-white font-display">No Active Passes Found</h3>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-white">No Active Passes</h3>
                   <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
-                    You don't have any upcoming or active parking sessions. Book a slot at one of our premium locations to get started!
+                    You don't have any active parking sessions. Book a slot to get started!
                   </p>
                 </div>
                 <Button
                   onClick={() => navigate('/search')}
-                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold px-6 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-indigo-600/20 text-xs transition-all duration-300 hover:scale-[1.02]"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg cursor-pointer text-xs"
                 >
-                  Find & Book a Spot
+                  Find Parking
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {activeBookings.map((booking, i) => (
                 <Card
                   key={booking.id}
                   onClick={() => setSelectedBookingForReceipt(booking)}
-                  className="bg-slate-950/40 border-white/5 backdrop-blur-2xl rounded-2xl shadow-xl ticket-pass relative overflow-hidden p-6 hover:border-emerald-500/30 transition-all duration-300 animate-fadeIn cursor-pointer"
-                  style={{ animationDelay: `${i * 0.08}s` }}
+                  className="bg-[#111118] border-white/[0.06] border-l-2 border-l-emerald-500 rounded-xl p-5 hover:border-white/[0.12] transition-colors animate-fadeIn cursor-pointer relative overflow-hidden"
+                  style={{ animationDelay: `${i * 0.06}s` }}
                 >
-                  {/* Ticket cutouts (aligned with the dashed line) */}
-                  <div className="absolute top-[52%] -translate-y-1/2 -left-3.5 w-7 h-7 bg-[#06060a] rounded-full border-r border-white/10 z-10" />
-                  <div className="absolute top-[52%] -translate-y-1/2 -right-3.5 w-7 h-7 bg-[#06060a] rounded-full border-l border-white/10 z-10" />
-
-                  {/* Glow */}
-                  <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-600/8 rounded-full blur-2xl pointer-events-none" />
-
-                  <CardContent className="p-0 space-y-4 relative z-10">
-                    {/* Header */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
+                  <CardContent className="p-0 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                          <Badge variant="outline" className="bg-slate-900/60 text-indigo-300 border-white/5 font-extrabold uppercase text-[9px] px-2 py-0.5 rounded-full">
-                            Pass #{booking.id}
+                      <div className="flex-1 min-w-0 pr-2.5">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <Badge variant="outline" className="bg-white/[0.04] text-blue-400 border-white/[0.06] font-semibold uppercase text-[9px] px-2 py-0.5 rounded-md">
+                            #{booking.id}
                           </Badge>
                           {(() => {
                             const countdown = getCountdownText(booking.startTime, booking.endTime);
                             return (
-                              <Badge variant="outline" className={`font-bold uppercase text-[9px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 ${countdown.className}`}>
+                              <Badge variant="outline" className={`font-semibold uppercase text-[9px] px-2 py-0.5 rounded-md flex items-center gap-1 ${countdown.className}`}>
                                 <Clock className="w-2.5 h-2.5 shrink-0" />
                                 {countdown.text}
                               </Badge>
                             );
                           })()}
                         </div>
-                        <h3 className="font-bold text-lg text-white truncate font-display">{booking.lot?.name}</h3>
-                        <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <h3 className="font-semibold text-base text-white truncate">{booking.lot?.name}</h3>
+                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3 text-blue-500 shrink-0" />
                           <span className="truncate">{booking.lot?.address}, {booking.lot?.city}</span>
                         </p>
                       </div>
                       <div className="text-center shrink-0">
-                        <div className="font-mono text-xl font-black px-3.5 py-1.5 bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 rounded-xl">
+                        <div className="font-mono text-lg font-bold px-3 py-1 bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded-lg">
                           {booking.slot?.slotNumber}
                         </div>
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Slot</div>
+                        <div className="text-[10px] text-slate-500 font-medium mt-0.5">Slot</div>
                       </div>
                     </div>
 
-                    {/* Dashed divider */}
-                    <div className="border-t border-dashed border-white/10 my-4" />
+                    <div className="border-t border-dashed border-white/[0.08] my-3" />
 
-                    {/* Time & Amount */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-xs text-slate-300">
-                        <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span className="text-white font-medium">{formatDate(booking.startTime)}</span>
                         <span className="text-slate-500">·</span>
-                        <span className="text-indigo-300 font-bold">{formatTime(booking.startTime)}</span>
+                        <span className="text-blue-400 font-semibold">{formatTime(booking.startTime)}</span>
                         <span className="text-slate-500">to</span>
-                        <span className="text-indigo-300 font-bold">{formatTime(booking.endTime)}</span>
+                        <span className="text-blue-400 font-semibold">{formatTime(booking.endTime)}</span>
                       </div>
-                      <div className="flex justify-between items-center pt-1">
-                        <span className="text-xs text-slate-400">Total Paid</span>
-                        <span className="text-base font-black text-emerald-400 font-display">₹{booking.totalAmount}</span>
+                      <div className="flex justify-between items-center pt-0.5">
+                        <span className="text-xs text-slate-400">Paid</span>
+                        <span className="text-base font-bold text-emerald-500">₹{booking.totalAmount}</span>
                       </div>
                     </div>
                   </CardContent>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-3 mt-6 relative z-10">
-                    <Button
-                      id={`show-qr-${booking.id}`}
-                      onClick={(e) => { e.stopPropagation(); setSelectedQR(booking); }}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl cursor-pointer animate-pulse-slot-dot"
-                    >
-                      <QrCode className="w-4 h-4" />
-                      Show Access Pass
+                  <div className="flex flex-wrap items-center gap-2.5 mt-5">
+                  <Button
+                    id={`show-qr-${booking.id}`}
+                    onClick={(e) => { e.stopPropagation(); setSelectedQR(booking); }}
+                    aria-label={`Show QR pass for booking ${booking.id}`}
+                    className="bg-blue-600 hover:bg-blue-500 text-white flex-1 min-w-[7.5rem] flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-lg cursor-pointer"
+                  >
+                      <QrCode className="w-3.5 h-3.5" />
+                      Show Pass
                     </Button>
 
                     {getCountdownText(booking.startTime, booking.endTime).text !== 'Session Ended' && (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExtendBooking(booking);
-                          setExtendHours(1);
-                        }}
-                        className="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-bold py-2.5 text-xs rounded-xl cursor-pointer h-9 px-4 shrink-0 transition-all"
-                      >
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExtendBooking(booking);
+                            setExtendHours(1);
+                          }}
+                          aria-label={`Extend booking ${booking.id}`}
+                          className="bg-emerald-500/15 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-500 font-semibold py-2 text-xs rounded-lg cursor-pointer h-8 px-3 shrink-0 min-w-[5rem]"
+                        >
                         Extend
                       </Button>
                     )}
 
-                    {/* Inline cancel confirmation */}
                     {confirmCancelId === booking.id ? (
-                      <div className="flex items-center gap-1.5 animate-fadeIn">
+                      <div className="flex items-center gap-1 animate-fadeIn">
                         <Button
                           onClick={(e) => { e.stopPropagation(); handleCancel(booking.id); }}
                           disabled={cancellingId === booking.id}
                           variant="destructive"
-                          className="text-xs font-bold py-2.5 px-3.5 rounded-xl cursor-pointer h-9"
+                          className="text-xs font-semibold py-2 px-3 rounded-lg cursor-pointer h-8"
                         >
-                          {cancellingId === booking.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                          {cancellingId === booking.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm'}
                         </Button>
                         <Button
                           onClick={(e) => { e.stopPropagation(); setConfirmCancelId(null); }}
                           variant="outline"
-                          className="text-xs py-2.5 px-3.5 rounded-xl border-white/10 text-slate-400 bg-transparent hover:bg-white/5 hover:text-white cursor-pointer h-9"
+                          className="text-xs py-2 px-3 rounded-lg border-white/[0.10] text-slate-400 bg-transparent hover:bg-white/[0.04] hover:text-white cursor-pointer h-8"
                         >
                           Keep
                         </Button>
                       </div>
                     ) : (
-                      <Button
-                        id={`cancel-btn-${booking.id}`}
-                        onClick={(e) => { e.stopPropagation(); setConfirmCancelId(booking.id); }}
-                        variant="outline"
-                        className="p-2.5 rounded-xl bg-red-500/8 hover:bg-red-500/15 text-red-400 border-red-500/15 hover:border-red-500/30 transition-all cursor-pointer h-9 w-9 flex items-center justify-center"
-                        title="Cancel Booking"
-                      >
-                        <XCircle className="w-4.5 h-4.5" />
+                        <Button
+                          id={`cancel-btn-${booking.id}`}
+                          onClick={(e) => { e.stopPropagation(); setConfirmCancelId(booking.id); }}
+                          variant="outline"
+                          aria-label={`Cancel booking ${booking.id}`}
+                          className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/15 text-rose-400 border-rose-500/20 hover:border-rose-500/30 cursor-pointer h-8 w-8 flex items-center justify-center"
+                          title="Cancel Booking"
+                        >
+                        <XCircle className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
@@ -650,44 +669,43 @@ const MyBookings: React.FC = () => {
           )}
         </section>
 
-        {/* Past / Cancelled Bookings */}
         {pastOrCancelled.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2.5 border-b border-white/5 pb-4 font-display">
-              <Clock className="w-5 h-5 text-slate-400" />
-              Booking History
-              <Badge variant="outline" className="border-white/10 text-slate-400 font-bold ml-1 rounded-full">{pastOrCancelled.length}</Badge>
+          <section className="space-y-3">
+            <h2 className="text-base font-semibold text-white flex items-center gap-2 border-b border-white/[0.06] pb-3">
+              <Clock className="w-4 h-4 text-slate-400" />
+              History
+              <Badge variant="outline" className="border-white/[0.10] text-slate-400 font-semibold ml-1 rounded-md text-[10px]">{pastOrCancelled.length}</Badge>
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {pastOrCancelled.map(booking => (
                 <Card
                   key={booking.id}
                   onClick={() => setSelectedBookingForReceipt(booking)}
-                  className="p-4 flex items-center justify-between gap-4 opacity-60 hover:opacity-100 hover:border-indigo-500/30 cursor-pointer transition-all duration-300 border-white/5 bg-slate-950/40 backdrop-blur-2xl rounded-2xl shadow-md group"
+                  className="p-3.5 flex items-center justify-between gap-3 opacity-60 hover:opacity-100 hover:border-white/[0.12] cursor-pointer transition-all border-white/[0.06] bg-[#111118] rounded-lg group"
                 >
-                  <CardContent className="p-0 flex items-center justify-between w-full gap-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 shrink-0">
-                        <Car className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                  <CardContent className="p-0 flex items-center justify-between w-full gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 bg-white/[0.04] rounded-lg flex items-center justify-center border border-white/[0.06] shrink-0">
+                        <Car className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-white group-hover:text-indigo-300 transition-colors truncate text-sm font-display">{booking.lot?.name}</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <h3 className="font-medium text-white group-hover:text-blue-400 transition-colors truncate text-sm">{booking.lot?.name}</h3>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
                           Slot {booking.slot?.slotNumber} · {formatDate(booking.startTime)}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <div className="text-right">
-                        <div className="font-bold text-sm text-white font-display">₹{booking.totalAmount}</div>
-                        <Badge variant="outline" className={`text-[10px] uppercase font-bold mt-1 tracking-wider rounded-full px-2.5 py-0.5 ${
-                          booking.status === 'cancelled' ? 'text-red-400 border-red-500/20 bg-red-500/5' : 'text-slate-400 border-white/10 bg-white/5'
+                        <div className="font-semibold text-sm text-white">₹{booking.totalAmount}</div>
+                        <Badge variant="outline" className={`text-[10px] uppercase font-semibold mt-0.5 tracking-wide rounded-md px-2 py-0.5 ${
+                          booking.status === 'cancelled' ? 'text-rose-400 border-rose-500/25 bg-rose-500/10' : 'text-slate-400 border-white/[0.10] bg-white/[0.04]'
                         }`}>
                           {booking.status}
                         </Badge>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all duration-300" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </CardContent>
                 </Card>
@@ -697,200 +715,192 @@ const MyBookings: React.FC = () => {
         )}
       </main>
 
-      {/* QR Code Modal using Shadcn Dialog */}
       <Dialog open={!!selectedQR} onOpenChange={(open) => { if (!open) setSelectedQR(null); }}>
-        <DialogContent className="max-w-sm w-full p-8 text-center space-y-6 border-indigo-500/40 shadow-2xl shadow-indigo-500/20 bg-slate-950/95 text-white backdrop-blur-2xl rounded-2xl">
-          <DialogHeader className="space-y-3">
-            <div className="w-12 h-12 bg-emerald-500/15 border border-emerald-500/25 rounded-2xl flex items-center justify-center mx-auto">
-              <QrCode className="w-6 h-6 text-emerald-400" />
+        <DialogContent className="max-w-sm w-full p-6 text-center space-y-5 border-blue-500/30 bg-[#111118] text-white rounded-xl">
+          <DialogHeader className="space-y-2.5">
+            <div className="w-11 h-11 bg-emerald-500/15 border border-emerald-500/25 rounded-xl flex items-center justify-center mx-auto">
+              <QrCode className="w-5 h-5 text-emerald-500" />
             </div>
-            <DialogTitle className="text-xl font-black text-white font-display text-center">Gate Access Pass</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-white text-center">Gate Access Pass</DialogTitle>
             <DialogDescription className="text-xs text-slate-400 text-center">
-              Scan at the barrier for automated entry/exit
+              Scan at barrier for entry/exit
             </DialogDescription>
           </DialogHeader>
 
           {selectedQR && (
             <>
-              <div className="p-4 bg-white rounded-2xl w-fit mx-auto shadow-xl ring-4 ring-indigo-500/20">
+              <div className="p-3 bg-white rounded-xl w-fit mx-auto ring-2 ring-blue-500/20">
                 <img
                   src={selectedQR.qrCode}
                   alt="Access QR Code"
-                  className="w-56 h-56 object-contain"
+                  className="w-52 h-52 object-contain"
                 />
               </div>
 
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-left space-y-2.5 text-sm">
+              <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.06] text-left space-y-2 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Parking Lot</span>
-                  <span className="font-semibold text-white truncate max-w-[180px]">{selectedQR.lot?.name}</span>
+                  <span className="text-slate-400">Lot</span>
+                  <span className="font-medium text-white truncate max-w-[180px]">{selectedQR.lot?.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Assigned Slot</span>
-                  <span className="font-mono font-black text-indigo-300 text-base">{selectedQR.slot?.slotNumber}</span>
+                  <span className="text-slate-400">Slot</span>
+                  <span className="font-mono font-bold text-blue-400 text-base">{selectedQR.slot?.slotNumber}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Vehicle Type</span>
-                  <span className="font-semibold text-white">{selectedQR.vehicleType || 'Sedan'}</span>
+                  <span className="text-slate-400">Vehicle</span>
+                  <span className="font-medium text-white">{selectedQR.vehicleType || 'Sedan'}</span>
                 </div>
                 {selectedQR.licensePlate && (
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">License Plate</span>
-                    <span className="font-mono font-bold text-white uppercase">{selectedQR.licensePlate}</span>
+                    <span className="text-slate-400">Plate</span>
+                    <span className="font-mono font-semibold text-white uppercase">{selectedQR.licensePlate}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Entry Time</span>
-                  <span className="font-semibold text-white">{formatTime(selectedQR.startTime)}</span>
+                  <span className="text-slate-400">Entry</span>
+                  <span className="font-medium text-white">{formatTime(selectedQR.startTime)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">Exit By</span>
-                  <span className="font-semibold text-white">{formatTime(selectedQR.endTime)}</span>
+                  <span className="font-medium text-white">{formatTime(selectedQR.endTime)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t border-white/8">
-                  <span className="text-slate-400">Amount Paid</span>
-                  <span className="font-black text-emerald-400 font-display">₹{selectedQR.totalAmount}</span>
+                <div className="flex justify-between items-center pt-2 border-t border-white/[0.06]">
+                  <span className="text-slate-400">Paid</span>
+                  <span className="font-bold text-emerald-500">₹{selectedQR.totalAmount}</span>
                 </div>
               </div>
             </>
           )}
 
           <DialogFooter showCloseButton={false} className="sm:justify-center">
-            <Button onClick={() => setSelectedQR(null)} className="bg-indigo-600 hover:bg-indigo-500 text-white w-full py-6 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer">
-              <Download className="w-4 h-4" />
+            <Button onClick={() => setSelectedQR(null)} className="bg-blue-600 hover:bg-blue-500 text-white w-full py-5 rounded-lg font-semibold flex items-center justify-center gap-1.5 cursor-pointer">
+              <Download className="w-3.5 h-3.5" />
               Done
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Details Modal */}
       <Dialog open={!!selectedBookingForReceipt} onOpenChange={(open) => { if (!open) setSelectedBookingForReceipt(null); }}>
-        <DialogContent className="max-w-md w-full p-6 border-indigo-500/30 shadow-2xl shadow-indigo-500/10 bg-slate-950/95 text-white backdrop-blur-2xl rounded-3xl">
-          <DialogHeader className="pb-4 border-b border-white/10">
-            <DialogTitle className="text-xl font-black text-center font-display tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-indigo-400 to-emerald-400">
+        <DialogContent className="max-w-md w-full p-5 border-blue-500/25 bg-[#111118] text-white rounded-xl">
+          <DialogHeader className="pb-3 border-b border-white/[0.06]">
+            <DialogTitle className="text-lg font-bold text-center tracking-tight text-blue-400">
               PARKIT RECEIPT
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-slate-400">
-              Booking Ref: #PK-{selectedBookingForReceipt?.id}
+              Ref: #PK-{selectedBookingForReceipt?.id}
             </DialogDescription>
           </DialogHeader>
 
           {selectedBookingForReceipt && (
-            <div className="space-y-6 my-4">
-              {/* Status Badge & Logo */}
-              <div className="flex justify-between items-center bg-white/5 p-3.5 rounded-2xl border border-white/10">
+            <div className="space-y-4 my-3">
+              <div className="flex justify-between items-center bg-white/[0.02] p-3 rounded-lg border border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                    <Car className="w-4 h-4 text-indigo-400" />
+                  <div className="w-7 h-7 rounded-md bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                    <Car className="w-3.5 h-3.5 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-300">ParkIt Security</div>
-                    <div className="text-[10px] text-slate-500">Receipt Generated</div>
+                    <div className="text-xs font-semibold text-slate-300">ParkIt</div>
+                    <div className="text-[10px] text-slate-500">Receipt</div>
                   </div>
                 </div>
                 <Badge
-                  className={`text-xs uppercase font-bold rounded-full px-3 py-1 ${
+                  className={`text-[10px] uppercase font-semibold rounded-md px-2 py-0.5 ${
                     selectedBookingForReceipt.status === 'confirmed'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/25'
                       : selectedBookingForReceipt.status === 'cancelled'
-                      ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                      ? 'bg-rose-500/15 text-rose-400 border border-rose-500/25'
+                      : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                   }`}
                 >
                   {selectedBookingForReceipt.status}
                 </Badge>
               </div>
 
-              {/* Live Status Tracker for Active Bookings */}
               {selectedBookingForReceipt.status === 'confirmed' && (() => {
                 const countdown = getCountdownText(selectedBookingForReceipt.startTime, selectedBookingForReceipt.endTime);
                 return (
-                  <div className={`p-3.5 rounded-2xl border text-center text-xs font-bold flex items-center justify-center gap-2 ${countdown.className}`}>
-                    <Clock className="w-4 h-4 shrink-0" />
+                  <div className={`p-3 rounded-lg border text-center text-xs font-semibold flex items-center justify-center gap-1.5 ${countdown.className}`}>
+                    <Clock className="w-3.5 h-3.5 shrink-0" />
                     <span>{countdown.text.toUpperCase()}</span>
                   </div>
                 );
               })()}
 
-              {/* Parking Lot Details */}
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Location & Slot</span>
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
-                  <div className="font-bold text-base text-white font-display">
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Location & Slot</span>
+                <div className="bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.06] space-y-1.5">
+                  <div className="font-semibold text-base text-white">
                     {selectedBookingForReceipt.lot?.name}
                   </div>
-                  <p className="text-xs text-slate-400 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-blue-500 shrink-0" />
                     <span>{selectedBookingForReceipt.lot?.address}, {selectedBookingForReceipt.lot?.city}</span>
                   </p>
-                  <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-2">
-                    <span className="text-xs text-slate-400">Assigned Slot</span>
-                    <span className="font-mono text-lg font-black text-indigo-300 px-3 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                      Slot {selectedBookingForReceipt.slot?.slotNumber}
+                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] mt-2">
+                    <span className="text-xs text-slate-400">Slot</span>
+                    <span className="font-mono text-base font-bold text-blue-400 px-2.5 py-0.5 bg-blue-500/15 border border-blue-500/25 rounded-md">
+                      {selectedBookingForReceipt.slot?.slotNumber}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Time Details */}
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Reservation Time</span>
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-white/5 grid grid-cols-2 gap-4">
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Time</span>
+                <div className="bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.06] grid grid-cols-2 gap-3">
                   <div>
                     <span className="text-[10px] text-slate-500 block">CHECK-IN</span>
-                    <span className="text-xs text-white font-bold block mt-0.5">{formatDate(selectedBookingForReceipt.startTime)}</span>
-                    <span className="text-sm text-indigo-300 font-black block mt-0.5">{formatTime(selectedBookingForReceipt.startTime)}</span>
+                    <span className="text-xs text-white font-semibold block mt-0.5">{formatDate(selectedBookingForReceipt.startTime)}</span>
+                    <span className="text-sm text-blue-400 font-bold block mt-0.5">{formatTime(selectedBookingForReceipt.startTime)}</span>
                   </div>
-                  <div className="border-l border-white/5 pl-4">
+                  <div className="border-l border-white/[0.06] pl-3">
                     <span className="text-[10px] text-slate-500 block">CHECK-OUT</span>
-                    <span className="text-xs text-white font-bold block mt-0.5">{formatDate(selectedBookingForReceipt.endTime)}</span>
-                    <span className="text-sm text-indigo-300 font-black block mt-0.5">{formatTime(selectedBookingForReceipt.endTime)}</span>
+                    <span className="text-xs text-white font-semibold block mt-0.5">{formatDate(selectedBookingForReceipt.endTime)}</span>
+                    <span className="text-sm text-blue-400 font-bold block mt-0.5">{formatTime(selectedBookingForReceipt.endTime)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Vehicle Details */}
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Vehicle Details</span>
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Vehicle</span>
+                <div className="bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.06] space-y-1.5">
                   <div className="flex justify-between items-center text-xs text-slate-400">
-                    <span>Vehicle Type</span>
-                    <span className="font-semibold text-white">{selectedBookingForReceipt.vehicleType || 'Sedan'}</span>
+                    <span>Type</span>
+                    <span className="font-medium text-white">{selectedBookingForReceipt.vehicleType || 'Sedan'}</span>
                   </div>
                   {selectedBookingForReceipt.licensePlate && (
                     <div className="flex justify-between items-center text-xs text-slate-400">
-                      <span>License Plate</span>
-                      <span className="font-mono font-bold text-white uppercase">{selectedBookingForReceipt.licensePlate}</span>
+                      <span>Plate</span>
+                      <span className="font-mono font-semibold text-white uppercase">{selectedBookingForReceipt.licensePlate}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Cost Summary */}
-              <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Payment Breakdown</span>
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
+              <div className="space-y-0.5">
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Payment</span>
+                <div className="bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.06] space-y-1.5">
                   <div className="flex justify-between text-xs text-slate-400">
-                    <span>Base Fare ({
+                    <span>Fare ({
                       Math.max(1, Math.round((new Date(selectedBookingForReceipt.endTime).getTime() - new Date(selectedBookingForReceipt.startTime).getTime()) / (1000 * 60 * 60)))
                     } hrs)</span>
                     <span>₹{selectedBookingForReceipt.totalAmount}</span>
                   </div>
                   <div className="flex justify-between text-xs text-slate-400">
-                    <span>Taxes & Fees</span>
+                    <span>Taxes</span>
                     <span>₹0.00</span>
                   </div>
-                  <div className="border-t border-dashed border-white/10 my-2 pt-2 flex justify-between items-center">
-                    <span className="text-xs font-bold text-white">Amount Charged</span>
-                    <span className="text-lg font-black text-emerald-400 font-display">₹{selectedBookingForReceipt.totalAmount}</span>
+                  <div className="border-t border-dashed border-white/[0.08] my-2 pt-2 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-white">Total</span>
+                    <span className="text-lg font-bold text-emerald-500">₹{selectedBookingForReceipt.totalAmount}</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-3">
             {selectedBookingForReceipt && selectedBookingForReceipt.lot?.id && (
               <Button
                 variant="outline"
@@ -899,23 +909,23 @@ const MyBookings: React.FC = () => {
                   setSelectedBookingForReceipt(null);
                   if (lotId) navigate(`/lot/${lotId}`);
                 }}
-                className="border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 flex-1 py-5 rounded-xl cursor-pointer text-xs gap-1.5"
+                className="border-blue-500/25 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 flex-1 py-4 rounded-lg cursor-pointer text-xs gap-1.5"
               >
-                <Car className="w-4 h-4" />
-                View Parking Lot
+                <Car className="w-3.5 h-3.5" />
+                View Lot
               </Button>
             )}
             <Button
               onClick={() => handlePrintReceipt(selectedBookingForReceipt)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white flex-1 font-bold py-5 rounded-xl flex items-center justify-center gap-2 cursor-pointer text-xs"
+              className="bg-blue-600 hover:bg-blue-500 text-white flex-1 font-semibold py-4 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer text-xs"
             >
-              <Download className="w-4 h-4" />
-              Print / Download
+              <Download className="w-3.5 h-3.5" />
+              Print
             </Button>
             <Button
               variant="outline"
               onClick={() => setSelectedBookingForReceipt(null)}
-              className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-white flex-1 py-5 rounded-xl cursor-pointer text-xs"
+              className="border-white/[0.10] text-slate-300 hover:bg-white/[0.04] hover:text-white flex-1 py-4 rounded-lg cursor-pointer text-xs"
             >
               Close
             </Button>
@@ -923,11 +933,10 @@ const MyBookings: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Extend Session Modal */}
       <Dialog open={!!extendBooking} onOpenChange={(open) => { if (!open) setExtendBooking(null); }}>
-        <DialogContent className="max-w-sm w-full p-6 border-emerald-500/30 shadow-2xl shadow-emerald-500/10 bg-slate-950/95 text-white backdrop-blur-2xl rounded-3xl">
-          <DialogHeader className="pb-3 border-b border-white/10">
-            <DialogTitle className="text-lg font-black text-center font-display tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-emerald-400 to-indigo-400">
+        <DialogContent className="max-w-sm w-full p-5 border-emerald-500/25 bg-[#111118] text-white rounded-xl">
+          <DialogHeader className="pb-2.5 border-b border-white/[0.06]">
+            <DialogTitle className="text-base font-bold text-center tracking-tight text-emerald-500">
               EXTEND RESERVATION
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-slate-400">
@@ -936,27 +945,27 @@ const MyBookings: React.FC = () => {
           </DialogHeader>
 
           {extendBooking && (
-            <div className="space-y-5 my-3 text-sm">
-              <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center">
+            <div className="space-y-4 my-2.5 text-sm">
+              <div className="p-3 bg-white/[0.02] rounded-lg border border-white/[0.06] flex justify-between items-center">
                 <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Current Checkout</div>
-                  <div className="text-white font-bold mt-1">
+                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Current Checkout</div>
+                  <div className="text-white font-semibold mt-0.5 text-sm">
                     {formatDate(extendBooking.endTime)} @ {formatTime(extendBooking.endTime)}
                   </div>
                 </div>
-                <Badge className="bg-indigo-500/15 text-indigo-300 border-indigo-500/20">
+                <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/25 text-xs">
                   ₹{extendBooking.lot?.pricePerHour}/hr
                 </Badge>
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
-                  Select Additional Hours
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1 block">
+                  Additional Hours
                 </label>
                 <select
                   value={extendHours}
                   onChange={e => setExtendHours(parseInt(e.target.value))}
-                  className="w-full bg-slate-900 border border-white/10 text-white rounded-xl h-10 px-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer appearance-none"
+                  className="w-full bg-[#111118] border border-white/[0.08] text-white rounded-lg h-9 px-3 text-sm focus:outline-none focus:border-emerald-500/50 cursor-pointer appearance-none"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                     backgroundPosition: 'right 0.5rem center',
@@ -965,21 +974,21 @@ const MyBookings: React.FC = () => {
                     paddingRight: '2.5rem'
                   }}
                 >
-                  <option value={1} className="bg-slate-950 text-white">+1 Hour</option>
-                  <option value={2} className="bg-slate-950 text-white">+2 Hours</option>
-                  <option value={3} className="bg-slate-950 text-white">+3 Hours</option>
-                  <option value={4} className="bg-slate-950 text-white">+4 Hours</option>
+                  <option value={1} className="bg-[#111118]">+1 Hour</option>
+                  <option value={2} className="bg-[#111118]">+2 Hours</option>
+                  <option value={3} className="bg-[#111118]">+3 Hours</option>
+                  <option value={4} className="bg-[#111118]">+4 Hours</option>
                 </select>
               </div>
 
-              <div className="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-2">
+              <div className="bg-white/[0.02] p-3.5 rounded-lg border border-white/[0.06] space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-slate-400">Rate ({extendHours} hrs)</span>
                   <span className="text-white">₹{extendBooking.lot?.pricePerHour || 50}/hr</span>
                 </div>
-                <div className="border-t border-dashed border-white/10 my-2 pt-2 flex justify-between items-center">
-                  <span className="text-xs font-bold text-white">Extension Amount</span>
-                  <span className="text-base font-black text-emerald-400 font-display">
+                <div className="border-t border-dashed border-white/[0.08] my-1.5 pt-1.5 flex justify-between items-center">
+                  <span className="text-xs font-semibold text-white">Total</span>
+                  <span className="text-base font-bold text-emerald-500">
                     ₹{extendHours * (extendBooking.lot?.pricePerHour || 50)}
                   </span>
                 </div>
@@ -987,14 +996,14 @@ const MyBookings: React.FC = () => {
             </div>
           )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-white/5">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-white/[0.06]">
             <Button
               onClick={handleExtendBooking}
               disabled={extending}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white flex-1 font-bold py-5 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white flex-1 font-semibold py-4 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer text-xs"
             >
               {extending ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</>
               ) : (
                 <>Pay & Extend</>
               )}
@@ -1002,7 +1011,7 @@ const MyBookings: React.FC = () => {
             <Button
               variant="outline"
               onClick={() => setExtendBooking(null)}
-              className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-white flex-1 py-5 rounded-xl cursor-pointer text-xs"
+              className="border-white/[0.10] text-slate-300 hover:bg-white/[0.04] hover:text-white flex-1 py-4 rounded-lg cursor-pointer text-xs"
             >
               Cancel
             </Button>
