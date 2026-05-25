@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ const LotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [lot, setLot] = useState<ParkingLot | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -35,6 +37,8 @@ const LotDetail: React.FC = () => {
   const [successBooking, setSuccessBooking] = useState<Booking | null>(null);
   const [vehicleType, setVehicleType] = useState<string>('Sedan');
   const [licensePlate, setLicensePlate] = useState<string>('');
+  const [bookingError, setBookingError] = useState('');
+  const [bookingStep, setBookingStep] = useState('');
   const plateValue = licensePlate.toUpperCase();
 
   useEffect(() => {
@@ -109,6 +113,8 @@ const LotDetail: React.FC = () => {
     if (!selectedSlot) return;
     if (validationError) return;
     setBookingInProgress(true);
+    setBookingError('');
+    setBookingStep('Creating your booking...');
 
     try {
       const bookRes = await api.post('/bookings', {
@@ -121,6 +127,7 @@ const LotDetail: React.FC = () => {
         licensePlate: licensePlate.trim().toUpperCase(),
       });
       const newBooking = bookRes.data;
+      setBookingStep('Creating payment order...');
 
       const orderRes = await api.post('/payment/order', {
         bookingId: newBooking.id,
@@ -130,6 +137,7 @@ const LotDetail: React.FC = () => {
       const { order, key_id } = orderRes.data;
 
       if (key_id === 'demo_mode' || !(window as any).Razorpay) {
+        setBookingStep('Confirming demo payment...');
         const verifyRes = await api.post('/payment/verify', {
           bookingId: newBooking.id,
           razorpay_order_id: order.id,
@@ -138,9 +146,12 @@ const LotDetail: React.FC = () => {
         });
         setSuccessBooking(verifyRes.data.booking);
         setBookingInProgress(false);
+        setBookingStep('');
+        toast({ title: 'Booking confirmed', description: 'Your parking slot is reserved.', variant: 'success' });
         return;
       }
 
+      setBookingStep('Opening payment window...');
       const rzpOptions = {
         key: key_id,
         amount: order.amount,
@@ -166,6 +177,9 @@ const LotDetail: React.FC = () => {
         modal: {
           ondismiss: () => {
             setBookingInProgress(false);
+            setBookingStep('');
+            setBookingError('Payment was cancelled.');
+            toast({ title: 'Payment cancelled', description: 'No charge was made.', variant: 'warning' });
             api.put(`/bookings/${newBooking.id}/cancel`).catch(console.error);
           },
         },
@@ -177,8 +191,12 @@ const LotDetail: React.FC = () => {
       const rzp = new (window as any).Razorpay(rzpOptions);
       rzp.open();
     } catch (err: any) {
-      console.error('Booking failed:', err.response?.data?.message || err.message);
+      const message = err.response?.data?.message || err.message || 'Booking failed';
+      console.error('Booking failed:', message);
+      setBookingError(message);
+      toast({ title: 'Booking failed', description: message, variant: 'error' });
       setBookingInProgress(false);
+      setBookingStep('');
     }
   };
 
@@ -427,6 +445,13 @@ const LotDetail: React.FC = () => {
                   </div>
                 )}
 
+                {bookingError && !validationError && (
+                  <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-lg">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    {bookingError}
+                  </div>
+                )}
+
                 <div className="border-t border-dashed border-white/[0.08] my-3" />
 
                 <div className="space-y-2.5">
@@ -450,7 +475,7 @@ const LotDetail: React.FC = () => {
                   className="bg-blue-600 hover:bg-blue-500 text-white w-full flex items-center justify-center gap-2 text-sm py-5 rounded-lg font-semibold cursor-pointer disabled:opacity-50 mt-2"
                 >
                   {bookingInProgress ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {bookingStep || 'Processing...'}</>
                   ) : (
                     <><CreditCard className="w-4 h-4" /> Pay ₹{totalAmount}</>
                   )}
