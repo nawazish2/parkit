@@ -738,12 +738,66 @@ const MyBookings: React.FC = () => {
 
           {selectedQR && (
             <>
-              <div className="p-3 bg-white rounded-xl w-fit mx-auto ring-2 ring-blue-500/20">
-                <img
-                  src={selectedQR.qrCode}
-                  alt="Access QR Code"
-                  className="w-52 h-52 object-contain"
-                />
+              <div className="space-y-3">
+                <div className="p-3 bg-white rounded-xl w-fit mx-auto ring-2 ring-blue-500/20">
+                  <img
+                    id="qr-pass-image"
+                    src={selectedQR.qrCode}
+                    alt="Access QR Code"
+                    className="w-52 h-52 object-contain"
+                  />
+                </div>
+
+                {/* QR Actions */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = selectedQR.qrCode;
+                      link.download = `parkit-pass-${selectedQR.id}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="text-xs"
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <html><head><title>ParkIt Pass #${selectedQR.id}</title></head>
+                          <body style="text-align:center; font-family:sans-serif; padding:40px;">
+                            <h2>ParkIt Access Pass</h2>
+                            <img src="${selectedQR.qrCode}" style="width:300px; height:300px;" />
+                            <p><strong>Slot:</strong> ${selectedQR.slot?.slotNumber} | <strong>Lot:</strong> ${selectedQR.lot?.name}</p>
+                            <p>Valid until: ${new Date(selectedQR.endTime).toLocaleString()}</p>
+                          </body></html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => printWindow.print(), 500);
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    Print
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => alert('Add to Wallet is a demo feature.')}
+                    className="text-xs"
+                  >
+                    Add to Wallet
+                  </Button>
+                </div>
               </div>
 
               <div className="p-3.5 rounded-lg bg-white/[0.02] border border-white/[0.06] text-left space-y-2 text-sm">

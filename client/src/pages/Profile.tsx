@@ -26,6 +26,7 @@ const Profile: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [confirmDeletePlate, setConfirmDeletePlate] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [error, setError] = useState('');
 
@@ -282,17 +283,38 @@ const Profile: React.FC = () => {
                         <Star className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(vehicle.plate)}
-                      disabled={updating}
-                      aria-label={`Delete ${vehicle.label || vehicle.type}`}
-                      className="w-8 h-8 rounded-lg border border-white/[0.06] hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 cursor-pointer"
-                      title="Delete Vehicle"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {confirmDeletePlate === vehicle.plate ? (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => { handleDelete(vehicle.plate); setConfirmDeletePlate(null); }}
+                          className="text-xs h-7 px-2 bg-rose-600 hover:bg-rose-500 text-white"
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setConfirmDeletePlate(null)}
+                          className="text-xs h-7 px-2 border border-white/[0.08] text-slate-400"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setConfirmDeletePlate(vehicle.plate)}
+                        disabled={updating}
+                        aria-label={`Delete ${vehicle.label || vehicle.type}`}
+                        className="w-8 h-8 rounded-lg border border-white/[0.06] hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 cursor-pointer"
+                        title="Delete Vehicle"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))}

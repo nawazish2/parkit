@@ -15,10 +15,21 @@ const Login: React.FC = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [showPassword, setShowPassword] = useState(false);
+
+  const validate = (): boolean => {
+    const errors: { email?: string; password?: string } = {};
+    if (!form.email.trim()) errors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Enter a valid email address';
+    if (!form.password) errors.password = 'Password is required';
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     setError('');
     try {
@@ -73,12 +84,13 @@ const Login: React.FC = () => {
                     id="login-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
+                    className={`pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.email ? 'border-rose-500 focus-visible:ring-rose-500/30' : ''}`}
                     value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    onChange={e => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) setFieldErrors(p => ({ ...p, email: undefined })); }}
                     required
                   />
                 </div>
+                {fieldErrors.email && <p className="text-xs text-rose-400 mt-1">{fieldErrors.email}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -89,9 +101,9 @@ const Login: React.FC = () => {
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Your password"
-                    className="pl-10 pr-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
+                    className={`pl-10 pr-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.password ? 'border-rose-500 focus-visible:ring-rose-500/30' : ''}`}
                     value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    onChange={e => { setForm({ ...form, password: e.target.value }); if (fieldErrors.password) setFieldErrors(p => ({ ...p, password: undefined })); }}
                     required
                   />
                   <button
@@ -102,6 +114,7 @@ const Login: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {fieldErrors.password && <p className="text-xs text-rose-400 mt-1">{fieldErrors.password}</p>}
               </div>
 
               <Button

@@ -58,3 +58,11 @@ export const broadcastSlotUpdate = (lotId: number, slotId: number, isAvailable: 
     console.log(`📢 Broadcasted slotUpdate to ${roomName}: slotId ${slotId} -> ${isAvailable ? 'available' : 'occupied'}`);
   }
 };
+
+export const broadcastBookingCreated = (lotId: number, slotNumber: string, lotName: string, amount: number) => {
+  if (ioInstance) {
+    const roomName = `lot_${lotId}`;
+    ioInstance.to(roomName).emit('bookingCreated', { slotNumber, lotName, amount });
+    console.log(`📢 Broadcasted bookingCreated to ${roomName}: slot ${slotNumber} at ${lotName}, ₹${amount}`);
+  }
+};

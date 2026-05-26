@@ -9,11 +9,12 @@ interface Props {
   selectedSlot: Slot | null;
   onSelectSlot: (slot: Slot) => void;
   isOwner?: boolean;
+  onConflict?: () => void;
 }
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
-const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner = false }) => {
+const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner = false, onConflict }) => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -60,7 +61,7 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
       // Real-time conflict detection for the driver's selected slot
       if (selectedSlot && updatedSlotId === selectedSlot.id && !isAvailable && !isOwner) {
         setConflictSlotId(updatedSlotId);
-        // Deselect immediately so user can't book a now-taken slot
+        onConflict?.();
         onSelectSlot(null as any);
       }
     });

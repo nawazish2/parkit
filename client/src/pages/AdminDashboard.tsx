@@ -226,6 +226,7 @@ const AdminDashboard: React.FC = () => {
                 a.download = `parkit-lots-${Date.now()}.csv`;
                 a.click();
                 URL.revokeObjectURL(url);
+                toast({ title: 'CSV exported', description: 'Property data downloaded.', variant: 'success' });
               }}
               className="text-xs"
             >

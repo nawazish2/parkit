@@ -12,13 +12,27 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'driver' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'driver' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
+
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!form.name.trim()) errors.name = 'Full name is required';
+    if (!form.email.trim()) errors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Enter a valid email';
+    if (!form.password) errors.password = 'Password is required';
+    else if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     setError('');
     try {
@@ -120,12 +134,13 @@ const Register: React.FC = () => {
                     id="register-name"
                     type="text"
                     placeholder="John Smith"
-                    className="pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
+                    className={`pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.name ? 'border-rose-500' : ''}`}
                     value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    onChange={e => { setForm({ ...form, name: e.target.value }); if (fieldErrors.name) setFieldErrors(p => ({ ...p, name: '' })); }}
                     required
                   />
                 </div>
+                {fieldErrors.name && <p className="text-xs text-rose-400 mt-1">{fieldErrors.name}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -136,12 +151,13 @@ const Register: React.FC = () => {
                     id="register-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
+                    className={`pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.email ? 'border-rose-500' : ''}`}
                     value={form.email}
-                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    onChange={e => { setForm({ ...form, email: e.target.value }); if (fieldErrors.email) setFieldErrors(p => ({ ...p, email: '' })); }}
                     required
                   />
                 </div>
+                {fieldErrors.email && <p className="text-xs text-rose-400 mt-1">{fieldErrors.email}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -152,9 +168,9 @@ const Register: React.FC = () => {
                     id="register-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Min 6 characters"
-                    className="pl-10 pr-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10"
+                    className={`pl-10 pr-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.password ? 'border-rose-500' : ''}`}
                     value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    onChange={e => { setForm({ ...form, password: e.target.value }); if (fieldErrors.password) setFieldErrors(p => ({ ...p, password: '' })); }}
                     minLength={6}
                     required
                   />
@@ -166,6 +182,23 @@ const Register: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {fieldErrors.password && <p className="text-xs text-rose-400 mt-1">{fieldErrors.password}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 z-10" />
+                  <Input
+                    id="register-confirm-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Re-enter your password"
+                    className={`pl-10 bg-[#111118] border-white/[0.08] text-white rounded-lg focus-visible:ring-blue-500/30 h-10 ${fieldErrors.confirmPassword ? 'border-rose-500' : ''}`}
+                    value={form.confirmPassword}
+                    onChange={e => { setForm({ ...form, confirmPassword: e.target.value }); if (fieldErrors.confirmPassword) setFieldErrors(p => ({ ...p, confirmPassword: '' })); }}
+                  />
+                </div>
+                {fieldErrors.confirmPassword && <p className="text-xs text-rose-400 mt-1">{fieldErrors.confirmPassword}</p>}
               </div>
 
               <Button

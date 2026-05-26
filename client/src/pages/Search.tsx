@@ -68,6 +68,9 @@ const Search: React.FC = () => {
 
   const clearSearch = () => {
     setCity('');
+    setSortBy('none');
+    setMaxPrice(200);
+    setSelectedAmenities([]);
     localStorage.removeItem('parkit_last_city');
     fetchLots();
   };
@@ -320,9 +323,19 @@ const Search: React.FC = () => {
               </div>
               <h3 className="text-lg font-semibold text-white">No Matches Found</h3>
               <p className="text-slate-400 text-xs leading-relaxed max-w-sm mx-auto">
-                {city
-                  ? `No parking lots in "${city}" match your filters. Try adjusting price or amenities.`
-                  : 'No parking lots match your filters. Try broadening your criteria.'}
+                {(() => {
+                  const hasFilters = sortBy !== 'none' || maxPrice < 200 || selectedAmenities.length > 0;
+                  if (city && hasFilters) {
+                    return `No parking lots in "${city}" match your active filters. Try adjusting price or amenities.`;
+                  }
+                  if (city) {
+                    return `No parking lots available in "${city}" yet. Try a different city or show all lots.`;
+                  }
+                  if (hasFilters) {
+                    return 'No parking lots match your filters. Try broadening your criteria.';
+                  }
+                  return 'No parking lots found. Check back soon for new properties.';
+                })()}
               </p>
               <div className="pt-2 flex justify-center gap-2">
                 <Button

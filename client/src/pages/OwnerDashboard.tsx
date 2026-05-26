@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import {
   BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Cell,
@@ -80,11 +81,18 @@ const OwnerDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastBookingAt, setLastBookingAt] = useState<Date | null>(null);
+  const [recentBookingFlash, setRecentBookingFlash] = useState(false);
+  const [statsFlash, setStatsFlash] = useState(false);
+  const [newBookingsCount, setNewBookingsCount] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
   const [showBookingsModal, setShowBookingsModal] = useState(false);
   const [bookingSearch, setBookingSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [lotFilter, setLotFilter] = useState('all');
   const [newLot, setNewLot] = useState({
     name: '',
     address: '',
@@ -94,6 +102,26 @@ const OwnerDashboard: React.FC = () => {
   });
   const [creatingLot, setCreatingLot] = useState(false);
   const [lotError, setLotError] = useState('');
+
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      await api.post(`/bookings/${bookingId}/cancel`);
+      toast({ title: 'Booking cancelled', description: 'The slot has been released.', variant: 'success' });
+      await fetchStats(true);
+    } catch (err: any) {
+      toast({ title: 'Cancel failed', description: err.response?.data?.message || 'Could not cancel booking', variant: 'error' });
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId: string) => {
+    try {
+      await api.put(`/bookings/${bookingId}/complete`);
+      toast({ title: 'Booking completed', description: 'Slot released and marked as completed.', variant: 'success' });
+      await fetchStats(true);
+    } catch (err: any) {
+      toast({ title: 'Complete failed', description: err.response?.data?.message || 'Could not complete booking', variant: 'error' });
+    }
+  };
 
   const fetchStats = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -117,6 +145,58 @@ const OwnerDashboard: React.FC = () => {
     fetchStats();
     setMounted(true);
   }, []);
+
+  // Real-time: connect to socket and listen for slot updates on owner's lots
+  useEffect(() => {
+    if (!stats?.lots?.length) return;
+
+    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+    const socket = io(SOCKET_URL, { reconnection: true });
+
+    socket.on('connect', () => {
+      setIsLiveConnected(true);
+      stats.lots.forEach(lot => socket.emit('joinLot', lot.id));
+    });
+
+    socket.on('reconnect', () => {
+      setIsLiveConnected(true);
+      stats.lots.forEach(lot => socket.emit('joinLot', lot.id));
+      fetchStats(true);
+    });
+
+    socket.on('slotUpdate', ({ slotId: _slotId, isAvailable }) => {
+      setLastUpdated(new Date());
+      if (!isAvailable) {
+        setLastBookingAt(new Date());
+        setStatsFlash(true);
+        setTimeout(() => setStatsFlash(false), 2000);
+        setNewBookingsCount(c => c + 1);
+        fetchStats(true);
+        setRecentBookingFlash(true);
+        setTimeout(() => setRecentBookingFlash(false), 2500);
+      } else {
+        fetchStats(true);
+      }
+    });
+
+    socket.on('bookingCreated', ({ slotNumber, lotName, amount }: { slotNumber: string; lotName: string; amount: number }) => {
+      toast({
+        title: `New booking at ${lotName}`,
+        description: `Slot ${slotNumber} booked for ₹${amount}. Dashboard updated.`,
+        variant: 'success',
+      });
+    });
+
+    socket.on('disconnect', () => {
+      setIsLiveConnected(false);
+    });
+
+    return () => {
+      setIsLiveConnected(false);
+      stats.lots.forEach(lot => socket.emit('leaveLot', lot.id));
+      socket.disconnect();
+    };
+  }, [stats?.lots]);
 
   const handleCreateLot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +228,7 @@ const OwnerDashboard: React.FC = () => {
       <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
         <Navbar />
         <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-all ${statsFlash ? 'ring-2 ring-emerald-500/30 rounded-xl' : ''}`}>
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-28 rounded-xl border border-white/[0.06] bg-[#111118] animate-pulse" />
             ))}
@@ -240,16 +320,24 @@ const OwnerDashboard: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-white">Owner Dashboard</h1>
             </div>
             <p className="text-slate-400 text-sm ml-[52px] max-w-xl leading-relaxed">Monitor earnings, occupancy, and manage properties</p>
-            <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Live revenue and slot usage
-            </div>
+             <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
+               <span className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
+               {isLiveConnected ? 'Live — real-time updates active' : 'Connecting to live updates...'}
+               {lastUpdated && (
+                 <span className="ml-1 text-[10px] text-slate-500">· Updated just now</span>
+               )}
+             </div>
+             {lastBookingAt && (
+               <div className="ml-[52px] mt-1.5 text-[10px] text-emerald-400">
+                 Last booking: {(() => { const secs = Math.floor((Date.now() - lastBookingAt.getTime()) / 1000); if (secs < 10) return 'just now'; if (secs < 60) return `${secs}s ago`; const mins = Math.floor(secs / 60); return `${mins}m ago`; })()}
+               </div>
+             )}
           </div>
 
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => fetchStats(true)}
+              onClick={() => { setNewBookingsCount(0); fetchStats(true); }}
               disabled={refreshing}
               aria-label="Refresh owner dashboard"
               className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
@@ -397,8 +485,8 @@ const OwnerDashboard: React.FC = () => {
             </div>
           </Card>
 
-            <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
+           <Card className={`p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl transition-all ${recentBookingFlash ? 'ring-1 ring-emerald-500/40' : ''}`}>
+           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
             <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-5">
               <Package className="w-5 h-5 text-violet-500" />
               My Properties
@@ -444,8 +532,16 @@ const OwnerDashboard: React.FC = () => {
                           <span className="text-xs text-blue-400 font-bold">₹{lot.pricePerHour}/hr</span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                         <div className="text-[10px] font-bold px-2 py-1 bg-white/[0.04] border border-white/[0.06] rounded-md text-white">{(lot as any).slots?.length ?? 20} Slots</div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/lots/${lot.id}`); }}
+                          className="text-[10px] h-6 px-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                        >
+                          Manage
+                        </Button>
                       </div>
                     </div>
                   </Card>
@@ -457,11 +553,19 @@ const OwnerDashboard: React.FC = () => {
 
           <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
-          <CardTitle className="text-lg font-bold text-white flex items-center justify-between mb-4">
-            <span className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" />
-              Recent Bookings
-            </span>
+             <CardTitle className="text-lg font-bold text-white flex items-center justify-between mb-4">
+               <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                  <span>Recent Bookings</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${recentBookingFlash ? 'bg-emerald-500 text-white border-emerald-400 animate-pulse' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'}`}>
+                    LIVE
+                  </span>
+                  {newBookingsCount > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500 text-white font-bold animate-pulse">
+                      +{newBookingsCount} new
+                    </span>
+                  )}
+               </div>
             <div className="flex items-center gap-2">
               {stats.recentBookings.length > 0 && (
                 <>
@@ -511,8 +615,8 @@ const OwnerDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {stats.recentBookings.slice(0, 6).map((booking: any) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors border border-white/[0.06]">
+               {stats.recentBookings.slice(0, 6).map((booking: any, index: number) => (
+                  <div key={booking.id} className={`flex items-center justify-between p-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors border border-white/[0.06] ${recentBookingFlash && index === 0 ? 'ring-2 ring-emerald-500/70 bg-emerald-500/10 scale-[1.01]' : ''}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-xs font-mono font-bold text-blue-300">
                       {booking.slot?.slotNumber}
@@ -525,15 +629,44 @@ const OwnerDashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-white">₹{booking.totalAmount}</div>
-                    <span className={`text-[10px] uppercase font-bold tracking-wide ${
-                      booking.status === 'confirmed' ? 'text-emerald-400' :
-                      booking.status === 'cancelled' ? 'text-rose-400' : 'text-amber-400'
-                    }`}>
-                      {booking.status}
-                    </span>
-                  </div>
-                </div>
+                     <div className="text-sm font-bold text-white">₹{booking.totalAmount}</div>
+                     <span className={`text-[10px] uppercase font-bold tracking-wide ${
+                       booking.status === 'confirmed' ? 'text-emerald-400' :
+                       booking.status === 'cancelled' ? 'text-rose-400' : 'text-amber-400'
+                     }`}>
+                       {booking.status}
+                     </span>
+                      {index === 0 && recentBookingFlash && (
+                        <span className="text-[10px] ml-2 px-1.5 py-0.5 rounded bg-emerald-500 text-white font-bold animate-pulse">NEW! (live)</span>
+                      )}
+                      {index === 0 && recentBookingFlash && (
+                        <span className="text-[9px] ml-1 text-emerald-400">just now</span>
+                      )}
+                      {index === 0 && recentBookingFlash && (
+                        <span className="text-[9px] ml-1 text-emerald-400">• live update</span>
+                      )}
+                     {booking.status === 'confirmed' && (
+                       <>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={() => handleCancelBooking(booking.id)}
+                           className="text-[10px] h-6 px-1.5 ml-2 border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+                         >
+                           Cancel
+                         </Button>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                            onClick={() => handleCompleteBooking(booking.id)}
+                           className="text-[10px] h-6 px-1.5 ml-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                         >
+                           Complete
+                         </Button>
+                       </>
+                     )}
+                   </div>
+                 </div>
               ))}
             </div>
           )}
@@ -682,6 +815,22 @@ const OwnerDashboard: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-full sm:w-48 bg-[#0A0A0F] rounded-lg border border-white/[0.08]">
+              <Select value={lotFilter} onValueChange={setLotFilter}>
+                <SelectTrigger className="w-full h-10 text-slate-300 border-none px-4 bg-transparent rounded-lg focus:ring-0">
+                  <SelectValue placeholder="All Lots" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#111118] border-white/[0.08] text-white rounded-lg max-h-60">
+                  <SelectItem value="all">All Lots</SelectItem>
+                  {(() => {
+                    const lotNames = [...new Set((stats?.recentBookings || []).map((b: any) => b.lot?.name).filter(Boolean))] as string[];
+                    return lotNames.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1 border border-white/[0.06] rounded-lg bg-[#0A0A0F]/50">
@@ -693,8 +842,11 @@ const OwnerDashboard: React.FC = () => {
                 
                 const matchesStatus = 
                   statusFilter === 'all' || booking.status === statusFilter;
+
+                const matchesLot = 
+                  lotFilter === 'all' || (booking.lot?.name || '') === lotFilter;
                   
-                return matchesSearch && matchesStatus;
+                return matchesSearch && matchesStatus && matchesLot;
               });
 
               if (filteredBookings.length === 0) {
@@ -703,16 +855,17 @@ const OwnerDashboard: React.FC = () => {
 
               return (
                 <Table>
-                  <TableHeader className="bg-[#0A0A0F] sticky top-0 z-10">
-                    <TableRow className="border-b border-white/[0.06] hover:bg-transparent">
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Slot</TableHead>
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Lot Name</TableHead>
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Date</TableHead>
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Timing</TableHead>
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs text-right">Amount</TableHead>
-                      <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs text-center">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                   <TableHeader className="bg-[#0A0A0F] sticky top-0 z-10">
+                     <TableRow className="border-b border-white/[0.06] hover:bg-transparent">
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Slot</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Lot Name</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Date</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs">Timing</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs text-right">Amount</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs text-center">Status</TableHead>
+                       <TableHead className="px-4 py-3 font-bold text-slate-400 uppercase tracking-wide text-xs text-center">Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody className="divide-y divide-white/[0.04]">
                     {filteredBookings.map((booking: any) => (
                       <TableRow key={booking.id} className="hover:bg-white/[0.02] border-none transition-colors">
@@ -733,15 +886,40 @@ const OwnerDashboard: React.FC = () => {
                           {new Date(booking.startTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} - {new Date(booking.endTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-right font-bold text-white whitespace-nowrap">₹{booking.totalAmount}</TableCell>
-                        <TableCell className="px-4 py-3 text-center whitespace-nowrap">
-                          <Badge className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${
-                            booking.status === 'confirmed' ? 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' :
-                            booking.status === 'cancelled' ? 'text-rose-400 border-rose-500/25 bg-rose-500/10' : 'text-amber-400 border-amber-500/25 bg-amber-500/10'
-                          }`}>
-                            {booking.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
+                         <TableCell className="px-4 py-3 text-center whitespace-nowrap">
+                           <Badge className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize border ${
+                             booking.status === 'confirmed' ? 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' :
+                             booking.status === 'cancelled' ? 'text-rose-400 border-rose-500/25 bg-rose-500/10' : 'text-amber-400 border-amber-500/25 bg-amber-500/10'
+                           }`}>
+                             {booking.status}
+                           </Badge>
+                         </TableCell>
+                         <TableCell className="px-4 py-3 text-center">
+                           {booking.status === 'confirmed' && (
+                             <div className="flex items-center justify-center gap-1">
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => handleCancelBooking(booking.id)}
+                                 className="text-xs border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                               >
+                                 Cancel
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => {
+                                   toast({ title: 'Marked as completed', description: 'Demo: Booking completed for this slot.', variant: 'success' });
+                                   fetchStats(true);
+                                 }}
+                                 className="text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                               >
+                                 Complete
+                               </Button>
+                             </div>
+                           )}
+                         </TableCell>
+                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>

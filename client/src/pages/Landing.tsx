@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Car, Zap, QrCode, CreditCard, ArrowRight, Search, BarChart3, Menu, X, Sparkles, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Landing: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'smooth';
+    return () => { document.documentElement.style.scrollBehavior = ''; };
+  }, []);
 
   const navLinks = [
     { href: '#features', label: 'Features' },
@@ -366,22 +371,22 @@ const Landing: React.FC = () => {
               <h3 className="font-semibold text-white mb-4">Company</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                  <a href="#" onClick={e => { e.preventDefault(); alert('About page coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
                     About
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                  <a href="#" onClick={e => { e.preventDefault(); alert('Contact page coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
                     Contact
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                  <a href="#" onClick={e => { e.preventDefault(); alert('Privacy Policy coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
                     Privacy Policy
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+                  <a href="#" onClick={e => { e.preventDefault(); alert('Terms of Service coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
                     Terms of Service
                   </a>
                 </li>

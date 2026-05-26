@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createBooking, getUserBookings, cancelBooking } from '../controllers/booking.controller';
+import { createBooking, getUserBookings, cancelBooking, completeBooking } from '../controllers/booking.controller';
 import { verifyToken } from '../middleware/verifyToken';
 
 const router = Router();
@@ -10,5 +10,6 @@ router.use(verifyToken);
 router.post('/', createBooking);
 router.get('/', getUserBookings);
 router.put('/:id/cancel', cancelBooking);
+router.put('/:id/complete', completeBooking);
 
 export default router;

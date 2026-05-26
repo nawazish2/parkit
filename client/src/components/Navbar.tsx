@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Car, LogOut, Search as SearchIcon, Calendar, BarChart3, Shield, Menu, X, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,13 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [mobileOpen]);
 
   if (!user) return null;
 
@@ -121,6 +128,7 @@ const Navbar: React.FC = () => {
             size="icon"
             onClick={() => setMobileOpen(o => !o)}
             aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileOpen}
             className="md:hidden p-2 rounded-lg bg-white/5 border border-white/[0.06] text-slate-400 hover:text-white cursor-pointer"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

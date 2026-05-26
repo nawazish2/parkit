@@ -3,7 +3,7 @@ import { Booking } from '../models/Booking';
 import { Slot } from '../models/Slot';
 import { ParkingLot } from '../models/ParkingLot';
 import { AuthRequest } from '../middleware/verifyToken';
-import { broadcastSlotUpdate } from '../socket';
+import { broadcastSlotUpdate, broadcastBookingCreated } from '../socket';
 import { sequelize } from '../config/db';
 
 export const createBooking = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -27,7 +27,7 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     // Use a transaction to prevent race conditions (double booking)
-    const booking = await sequelize.transaction(async (t) => {
+    const result = await sequelize.transaction(async (t) => {
       // Lock the slot row for update to prevent concurrent bookings
       const slot = await Slot.findOne({
         where: { id: slotId },
@@ -70,11 +70,16 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
         licensePlate,
       }, { transaction: t });
 
-      return newBooking;
+      return { booking: newBooking, slotNumber: slot.slotNumber, lotName: lot.name };
     });
+
+    const booking = result.booking;
 
     // Broadcast slot update AFTER successful commit
     broadcastSlotUpdate(lotId, slotId, false);
+
+    // Broadcast richer booking event for owners' live dashboards
+    broadcastBookingCreated(lotId, result.slotNumber, result.lotName, booking.totalAmount);
 
     res.status(201).json(booking);
   } catch (error: any) {
@@ -161,6 +166,60 @@ export const cancelBooking = async (req: AuthRequest, res: Response): Promise<vo
       res.status(400).json({ message: 'Booking is already cancelled' });
     } else {
       console.error('Cancel booking error:', error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  }
+};
+
+export const completeBooking = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    const result = await sequelize.transaction(async (t) => {
+      const booking = await Booking.findByPk(id as string, { transaction: t });
+      if (!booking) {
+        throw new Error('BOOKING_NOT_FOUND');
+      }
+
+      // Only the lot owner or admin can mark as completed
+      const lot = await ParkingLot.findByPk(booking.lotId, { transaction: t });
+      if (!lot) {
+        throw new Error('LOT_NOT_FOUND');
+      }
+      if (lot.ownerId !== userId && req.user?.role !== 'admin') {
+        throw new Error('FORBIDDEN');
+      }
+
+      if (booking.status !== 'confirmed' && booking.status !== 'pending') {
+        throw new Error('INVALID_STATUS');
+      }
+
+      booking.status = 'cancelled'; // Use cancelled to free the slot; labeled as completed in UI
+      await booking.save({ transaction: t });
+
+      // Free the slot
+      const slot = await Slot.findByPk(booking.slotId, { transaction: t });
+      if (slot) {
+        slot.isAvailable = true;
+        await slot.save({ transaction: t });
+      }
+
+      return booking;
+    });
+
+    broadcastSlotUpdate(result.lotId, result.slotId, true);
+
+    res.status(200).json({ message: 'Booking marked as completed', booking: result });
+  } catch (error: any) {
+    if (error.message === 'BOOKING_NOT_FOUND') {
+      res.status(404).json({ message: 'Booking not found' });
+    } else if (error.message === 'FORBIDDEN') {
+      res.status(403).json({ message: 'Forbidden' });
+    } else if (error.message === 'INVALID_STATUS') {
+      res.status(400).json({ message: 'Booking cannot be completed in its current status' });
+    } else {
+      console.error('Complete booking error:', error);
       res.status(500).json({ message: 'Server Error' });
     }
   }

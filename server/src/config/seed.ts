@@ -273,6 +273,29 @@ export const seedDatabase = async () => {
       amenities: JSON.stringify(['Waterfront', 'Covered', 'Security', 'EV Charging']),
     });
 
+    // Add pending lots for Admin demo (shows approval flow)
+    await ParkingLot.create({
+      ownerId: owner.id,
+      name: 'Goa Beachfront Parking',
+      address: 'Calangute Beach Road, North Goa',
+      city: 'Goa',
+      pricePerHour: 45,
+      status: 'pending',
+      photos: JSON.stringify(['https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800']),
+      amenities: JSON.stringify(['Beach Access', 'Valet', 'CCTV', 'EV Charging']),
+    });
+
+    await ParkingLot.create({
+      ownerId: owner.id,
+      name: 'Rishikesh Riverside Parking',
+      address: 'Lakshman Jhula Road, Rishikesh',
+      city: 'Rishikesh',
+      pricePerHour: 25,
+      status: 'pending',
+      photos: JSON.stringify(['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800']),
+      amenities: JSON.stringify(['Riverside', 'Open Air', 'Security', 'Yoga Area']),
+    });
+
     // 3. Create Slots for each lot using bulkCreate for performance
     const prefixes = ['A', 'B', 'C', 'D'];
     const generateSlotData = (lotId: number) =>
@@ -284,7 +307,7 @@ export const seedDatabase = async () => {
         }))
       );
 
-    await Slot.bulkCreate([
+    const allSlots = await Slot.bulkCreate([
       ...generateSlotData(lot1.id),
       ...generateSlotData(lot2.id),
       ...generateSlotData(lot3.id),
@@ -301,6 +324,17 @@ export const seedDatabase = async () => {
       ...generateSlotData(lot14.id),
       ...generateSlotData(lot15.id),
     ]);
+
+    // Make demo more realistic: occupy some slots in popular lots
+    const popularLotSlots = allSlots.filter(s => 
+      [lot1.id, lot2.id, lot3.id, lot11.id].includes(s.lotId)
+    );
+    
+    // Mark ~30% of slots in popular lots as occupied
+    const slotsToOccupy = popularLotSlots.slice(0, Math.floor(popularLotSlots.length * 0.3));
+    for (const slot of slotsToOccupy) {
+      await Slot.update({ isAvailable: false }, { where: { id: slot.id } });
+    }
 
     // 4. Create some confirmed bookings in the last 7 days for the chart
     console.log('🌱 Seeding confirmed bookings...');
@@ -348,6 +382,39 @@ export const seedDatabase = async () => {
 
       const historicalDate = generateBookingDate(detail.daysAgo, 12);
       await Booking.update({ createdAt: historicalDate }, { where: { id: b.id } });
+    }
+
+    // Add a few active/upcoming bookings for driver demo (so My Bookings looks good during live demo)
+    console.log('🌱 Adding active demo bookings for driver...');
+    
+    const futureSlots = await Slot.findAll({ 
+      where: { lotId: lot1.id, isAvailable: true },
+      limit: 3 
+    });
+
+    if (futureSlots.length > 0) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+
+      const tomorrowEnd = new Date(tomorrow);
+      tomorrowEnd.setHours(14, 0, 0, 0);
+
+      await Booking.create({
+        userId: driver.id,
+        lotId: lot1.id,
+        slotId: futureSlots[0].id,
+        startTime: tomorrow,
+        endTime: tomorrowEnd,
+        totalAmount: 240,
+        status: 'confirmed',
+        qrCode: `demo-active-qr-1`,
+        vehicleType: 'Sedan',
+        licensePlate: 'DL3CAF9999',
+      });
+
+      // Mark the slot as occupied
+      await Slot.update({ isAvailable: false }, { where: { id: futureSlots[0].id } });
     }
 
     console.log('✅ Database seeded successfully with demo users, properties, and bookings!');
