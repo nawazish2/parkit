@@ -257,6 +257,21 @@ const OwnerDashboard: React.FC = () => {
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+            <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    const id = window.setInterval(() => fetchStats(true), 30000);
+                    (window as any).__ownerAutoRefresh = id;
+                  } else {
+                    const id = (window as any).__ownerAutoRefresh;
+                    if (id) window.clearInterval(id);
+                  }
+                }}
+              />
+              Auto 30s
+            </label>
             <Button
               id="add-lot-btn"
               onClick={() => setShowModal(true)}
@@ -447,11 +462,39 @@ const OwnerDashboard: React.FC = () => {
               <Calendar className="w-5 h-5 text-blue-500" />
               Recent Bookings
             </span>
-            {stats.recentBookings.length > 0 && (
-              <Button onClick={() => setShowBookingsModal(true)} variant="ghost" className="text-xs text-blue-400 hover:text-blue-300 font-semibold p-0 h-auto hover:bg-transparent">
-                View All
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {stats.recentBookings.length > 0 && (
+                <>
+                  <Button
+                    onClick={() => {
+                      const headers = ['Date', 'Lot', 'Slot', 'Amount', 'Status'];
+                      const rows = stats.recentBookings.map((b: any) => [
+                        new Date(b.createdAt).toLocaleDateString('en-IN'),
+                        b.lot?.name || '',
+                        b.slot?.slotNumber || '',
+                        b.totalAmount,
+                        b.status,
+                      ]);
+                      const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                      const blob = new Blob([csv], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `parkit-revenue-${Date.now()}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    variant="ghost"
+                    className="text-xs text-emerald-400 hover:text-emerald-300 p-0 h-auto"
+                  >
+                    Export CSV
+                  </Button>
+                  <Button onClick={() => setShowBookingsModal(true)} variant="ghost" className="text-xs text-blue-400 hover:text-blue-300 font-semibold p-0 h-auto hover:bg-transparent">
+                    View All
+                  </Button>
+                </>
+              )}
+            </div>
           </CardTitle>
           
           {stats.recentBookings.length === 0 ? (

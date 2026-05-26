@@ -140,8 +140,14 @@ const Profile: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <div className="max-w-4xl mx-auto px-4 w-full mt-6 space-y-4 animate-pulse">
+          <div className="h-24 rounded-xl bg-[#111118] border border-white/[0.06]" />
+          <div className="h-10 w-40 bg-[#111118] rounded" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-20 rounded-xl bg-[#111118] border border-white/[0.06]" />
+            ))}
+          </div>
         </div>
       </div>
     );

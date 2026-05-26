@@ -34,6 +34,7 @@ const MyBookings: React.FC = () => {
   const [extendBooking, setExtendBooking] = useState<Booking | null>(null);
   const [extendHours, setExtendHours] = useState<number>(1);
   const [extending, setExtending] = useState<boolean>(false);
+  const [extendStep, setExtendStep] = useState('');
   const [feedback, setFeedback] = useState('');
   const { toast } = useToast();
 
@@ -126,6 +127,7 @@ const MyBookings: React.FC = () => {
     setExtending(true);
     setError('');
     setFeedback('');
+    setExtendStep('Creating extension order...');
 
     try {
       const orderRes = await api.post('/payment/extend-order', {
@@ -136,6 +138,7 @@ const MyBookings: React.FC = () => {
       const { order, key_id } = orderRes.data;
 
       if (key_id === 'demo_mode' || !(window as any).Razorpay) {
+        setExtendStep('Confirming demo payment...');
         await api.post('/payment/verify-extend', {
           bookingId: extendBooking.id,
           additionalHours: extendHours,
@@ -146,10 +149,13 @@ const MyBookings: React.FC = () => {
         await fetchBookings();
         setExtendBooking(null);
         setExtending(false);
+        setExtendStep('');
         setFeedback('Reservation extended.');
         toast({ title: 'Reservation extended', description: 'Your booking has been extended.', variant: 'success' });
         return;
       }
+
+      setExtendStep('Opening payment window...');
 
       const rzpOptions = {
         key: key_id,
@@ -181,6 +187,8 @@ const MyBookings: React.FC = () => {
         modal: {
           ondismiss: () => {
             setExtending(false);
+            setExtendStep('');
+            toast({ title: 'Payment cancelled', description: 'Extension not charged.', variant: 'warning' });
           },
         },
         theme: {
@@ -193,6 +201,7 @@ const MyBookings: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to extend session');
       setExtending(false);
+      setExtendStep('');
       toast({ title: 'Extend failed', description: err.response?.data?.message || 'Failed to extend session', variant: 'error' });
     }
   };
@@ -1003,7 +1012,7 @@ const MyBookings: React.FC = () => {
               className="bg-emerald-600 hover:bg-emerald-500 text-white flex-1 font-semibold py-4 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer text-xs"
             >
               {extending ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...</>
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {extendStep || 'Processing...'}</>
               ) : (
                 <>Pay & Extend</>
               )}

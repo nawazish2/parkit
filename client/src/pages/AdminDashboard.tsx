@@ -196,16 +196,56 @@ const AdminDashboard: React.FC = () => {
               Mobile-friendly review and moderation tools
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            aria-label="Refresh admin dashboard"
-            className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => fetchData(true)}
+              disabled={refreshing}
+              aria-label="Refresh admin dashboard"
+              className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const headers = ['Name', 'City', 'Owner', 'Status', 'Rate'];
+                const rows = filteredLots.map((l: any) => [
+                  l.name,
+                  l.city,
+                  l.owner?.name || '',
+                  l.status,
+                  l.pricePerHour,
+                ]);
+                const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `parkit-lots-${Date.now()}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="text-xs"
+            >
+              Export CSV
+            </Button>
+            <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    const id = window.setInterval(() => fetchData(true), 30000);
+                    (window as any).__adminAutoRefresh = id;
+                  } else {
+                    const id = (window as any).__adminAutoRefresh;
+                    if (id) window.clearInterval(id);
+                  }
+                }}
+              />
+              Auto 30s
+            </label>
         </div>
 
         {error && (

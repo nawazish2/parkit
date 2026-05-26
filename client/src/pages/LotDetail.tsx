@@ -193,8 +193,12 @@ const LotDetail: React.FC = () => {
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Booking failed';
       console.error('Booking failed:', message);
-      setBookingError(message);
-      toast({ title: 'Booking failed', description: message, variant: 'error' });
+      const isOccupied = message.toLowerCase().includes('occupied');
+      const friendly = isOccupied
+        ? 'Slot taken by another driver. The grid updated live — please select a different slot.'
+        : message;
+      setBookingError(friendly);
+      toast({ title: isOccupied ? 'Slot conflict' : 'Booking failed', description: friendly, variant: 'error' });
       setBookingInProgress(false);
       setBookingStep('');
     }

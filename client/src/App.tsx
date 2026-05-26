@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/ui/toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -30,11 +31,30 @@ const AppLoading = () => (
 );
 
 const App: React.FC = () => {
+  const [isOffline, setIsOffline] = React.useState(!navigator.onLine);
+
+  React.useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <ToastProvider>
-        <BrowserRouter>
-          <React.Suspense fallback={<AppLoading />}>
+        <ErrorBoundary>
+          <BrowserRouter>
+            {isOffline && (
+              <div className="bg-amber-500/15 border-b border-amber-500/25 text-amber-300 text-center text-xs py-1.5 font-medium">
+                You are offline. Some actions may be limited. Cached data is shown where available.
+              </div>
+            )}
+            <React.Suspense fallback={<AppLoading />}>
             <Routes>
               {/* Public */}
               <Route path="/login" element={<Login />} />
@@ -58,6 +78,7 @@ const App: React.FC = () => {
             </Routes>
           </React.Suspense>
         </BrowserRouter>
+        </ErrorBoundary>
       </ToastProvider>
     </AuthProvider>
   );

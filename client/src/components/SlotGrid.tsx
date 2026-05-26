@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Car, CheckCircle2, XCircle, Loader2, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Car, CheckCircle2, XCircle, Loader2, Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import api from '../api/axios';
 import type { Slot } from '../types';
 
@@ -17,11 +17,13 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [conflictSlotId, setConflictSlotId] = useState<number | null>(null);
 
   const fetchSlots = async () => {
     try {
       const res = await api.get(`/slots/lot/${lotId}`);
       setSlots(res.data);
+      setConflictSlotId(null); // clear any prior conflict on manual refresh
     } catch (err) {
       console.error('Failed to fetch slots', err);
     } finally {
@@ -54,6 +56,13 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
           slot.id === updatedSlotId ? { ...slot, isAvailable } : slot
         )
       );
+
+      // Real-time conflict detection for the driver's selected slot
+      if (selectedSlot && updatedSlotId === selectedSlot.id && !isAvailable && !isOwner) {
+        setConflictSlotId(updatedSlotId);
+        // Deselect immediately so user can't book a now-taken slot
+        onSelectSlot(null as any);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -126,6 +135,13 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
         </div>
       </div>
 
+      {conflictSlotId && (
+        <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300 animate-fadeIn">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          The slot you selected was just taken by someone else. Please pick another.
+        </div>
+      )}
+
       <div className="p-2.5 flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#111118]">
         <span className="text-xs text-slate-400 font-medium shrink-0">Occupancy</span>
         <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
@@ -150,7 +166,12 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
           return (
             <button
               key={slot.id}
-              onClick={() => (slot.isAvailable || isOwner) && onSelectSlot(slot)}
+              onClick={() => {
+                if ((slot.isAvailable || isOwner)) {
+                  setConflictSlotId(null);
+                  onSelectSlot(slot);
+                }
+              }}
               disabled={!slot.isAvailable && !isOwner}
               className={`relative h-24 rounded-lg p-2.5 flex flex-col items-center justify-between transition-colors border ${
                 isSelected
