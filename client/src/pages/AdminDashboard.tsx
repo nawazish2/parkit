@@ -4,6 +4,7 @@ import {
   Clock, Loader2, TrendingUp, Building2, Search, RefreshCw,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import KpiCard from '../components/dashboard/KpiCard';
 import FilterBar from '../components/dashboard/FilterBar';
@@ -569,6 +570,7 @@ const AdminDashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </main>
+      <AppFooter />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import {
   Loader2, Download, AlertTriangle, Ticket, Car, ChevronRight,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import api from '../api/axios';
 import type { Booking } from '../types';
 import { Button } from '@/components/ui/button';
@@ -723,6 +724,7 @@ const MyBookings: React.FC = () => {
           </section>
         )}
       </main>
+      <AppFooter />
 
       <Dialog open={!!selectedQR} onOpenChange={(open) => { if (!open) setSelectedQR(null); }}>
         <DialogContent className="max-w-sm w-full p-6 text-center space-y-5 border-blue-500/30 bg-[#111118] text-white rounded-xl">

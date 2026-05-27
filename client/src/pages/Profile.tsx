@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car, Plus, Trash2, Star, ArrowLeft, AlertTriangle, Loader2, Mail, Shield } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import type { Vehicle } from '../types';
@@ -322,6 +323,7 @@ const Profile: React.FC = () => {
           )}
         </section>
       </main>
+      <AppFooter />
 
       <Dialog open={showAddModal} onOpenChange={(open) => { if (!open) setShowAddModal(false); }}>
         <DialogContent className="max-w-md w-full p-5 border-blue-500/25 bg-[#111118] text-white rounded-xl">

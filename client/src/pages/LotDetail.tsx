@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Clock, CreditCard, ShieldCheck, Check, ArrowLeft, Loader2, QrCode, AlertTriangle, Star, Calendar } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import SlotGrid from '../components/SlotGrid';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -446,10 +447,6 @@ const LotDetail: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-[10px] text-blue-400/70 -mt-1">
-              <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">DEMO</span>
-              <span>Instant booking enabled • Owners see updates live</span>
-            </div>
             <div className="flex justify-center gap-2 mt-1">
               <button
                 type="button"
@@ -566,7 +563,7 @@ const LotDetail: React.FC = () => {
                     }}
                     className="w-full mt-1 text-sm bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 py-2 rounded-lg font-medium transition-colors"
                   >
-                    ⚡ Suggest next available time (Demo)
+                    ⚡ Suggest next available time
                   </button>
 
                   {user?.savedVehicles && user.savedVehicles.length > 0 && (
@@ -703,6 +700,7 @@ const LotDetail: React.FC = () => {
           </Card>
         </div>
       </main>
+      <AppFooter />
 
       <Dialog open={!!successBooking} onOpenChange={(open) => { if (!open) { setSuccessBooking(null); setSelectedSlot(null); } }}>
         <DialogContent className="max-w-md w-full p-6 text-center space-y-5 border-blue-500/30 bg-[#111118] text-white rounded-xl">

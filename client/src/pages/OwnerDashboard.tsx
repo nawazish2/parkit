@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import KpiCard from '../components/dashboard/KpiCard';
 import StatusBanner from '../components/dashboard/StatusBanner';
@@ -644,6 +645,7 @@ const OwnerDashboard: React.FC = () => {
           )}
         </DataSectionCard>
       </main>
+      <AppFooter />
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="max-w-lg p-6 border-blue-500/25 bg-[#111118] text-white rounded-xl">

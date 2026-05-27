@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, MapPin, Car, Loader2, TrendingUp, Star, SlidersHorizontal, Sparkles } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import AppFooter from '../components/AppFooter';
 import EmptyStateCard from '../components/dashboard/EmptyStateCard';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -306,6 +307,7 @@ const Search: React.FC = () => {
           </div>
         )}
       </main>
+      <AppFooter />
     </div>
   );
 };
