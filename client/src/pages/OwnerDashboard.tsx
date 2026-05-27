@@ -11,13 +11,16 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import KpiCard from '../components/dashboard/KpiCard';
+import StatusBanner from '../components/dashboard/StatusBanner';
+import EmptyStateCard from '../components/dashboard/EmptyStateCard';
+import DataSectionCard from '../components/dashboard/DataSectionCard';
 import api from '../api/axios';
 import type { ParkingLot } from '../types';
 
 import {
   Card,
-  CardDescription,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -311,123 +314,100 @@ const OwnerDashboard: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-6 mt-6 relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-violet-500/15 rounded-lg flex items-center justify-center border border-violet-500/20">
-                <BarChart3 className="w-5 h-5 text-violet-400" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Owner Dashboard</h1>
-            </div>
-            <p className="text-slate-400 text-sm ml-[52px] max-w-xl leading-relaxed">Monitor earnings, occupancy, and manage properties</p>
-             <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
-               <span className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
-               {isLiveConnected ? 'Live — real-time updates active' : 'Connecting to live updates...'}
-               {lastUpdated && (
-                 <span className="ml-1 text-[10px] text-slate-500">· Updated just now</span>
-               )}
-             </div>
-             {lastBookingAt && (
-               <div className="ml-[52px] mt-1.5 text-[10px] text-emerald-400">
-                 Last booking: {(() => { const secs = Math.floor((Date.now() - lastBookingAt.getTime()) / 1000); if (secs < 10) return 'just now'; if (secs < 60) return `${secs}s ago`; const mins = Math.floor(secs / 60); return `${mins}m ago`; })()}
-               </div>
-             )}
-          </div>
+        <DashboardHeader
+          icon={<div className="w-10 h-10 bg-violet-500/15 rounded-lg flex items-center justify-center border border-violet-500/20"><BarChart3 className="w-5 h-5 text-violet-400" /></div>}
+          title="Owner Dashboard"
+          description="Monitor occupancy, revenue trends, and booking operations in one place."
+          statusText={isLiveConnected ? 'Live — real-time updates active' : 'Connecting to live updates...'}
+          statusDotClassName={isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}
+          badges={[
+            { label: 'KPI Overview', className: 'bg-blue-500/15 text-blue-300 border-blue-500/25' },
+            { label: 'Live Bookings', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25' },
+            { label: 'Property Controls', className: 'bg-violet-500/15 text-violet-300 border-violet-500/25' },
+          ]}
+          meta={
+            <>
+              {lastUpdated && <div className="ml-[52px] mt-1 text-[10px] text-slate-500">Updated just now</div>}
+              {lastBookingAt && (
+                <div className="ml-[52px] mt-1.5 text-[10px] text-emerald-400">
+                  Last booking: {(() => { const secs = Math.floor((Date.now() - lastBookingAt.getTime()) / 1000); if (secs < 10) return 'just now'; if (secs < 60) return `${secs}s ago`; const mins = Math.floor(secs / 60); return `${mins}m ago`; })()}
+                </div>
+              )}
+            </>
+          }
+          actions={
+            <>
+              <Button
+                variant="outline"
+                onClick={() => { setNewBookingsCount(0); fetchStats(true); }}
+                disabled={refreshing}
+                aria-label="Refresh owner dashboard"
+                className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const id = window.setInterval(() => fetchStats(true), 30000);
+                      (window as any).__ownerAutoRefresh = id;
+                    } else {
+                      const id = (window as any).__ownerAutoRefresh;
+                      if (id) window.clearInterval(id);
+                    }
+                  }}
+                />
+                Auto 30s
+              </label>
+              <Button
+                id="add-lot-btn"
+                onClick={() => setShowModal(true)}
+                aria-label="Add parking lot"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
+              >
+                <Plus className="w-5 h-5 mr-1" /> Add Lot
+              </Button>
+            </>
+          }
+        />
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => { setNewBookingsCount(0); fetchStats(true); }}
-              disabled={refreshing}
-              aria-label="Refresh owner dashboard"
-              className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    const id = window.setInterval(() => fetchStats(true), 30000);
-                    (window as any).__ownerAutoRefresh = id;
-                  } else {
-                    const id = (window as any).__ownerAutoRefresh;
-                    if (id) window.clearInterval(id);
-                  }
-                }}
-              />
-              Auto 30s
-            </label>
-            <Button
-              id="add-lot-btn"
-              onClick={() => setShowModal(true)}
-              aria-label="Add parking lot"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold"
-            >
-              <Plus className="w-5 h-5 mr-1" /> Add Lot
-            </Button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-lg flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {feedback && !error && (
-          <div role="status" aria-live="polite" className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            {feedback}
-          </div>
-        )}
+        {error && <StatusBanner variant="error" message={error} />}
+        {feedback && !error && <StatusBanner variant="success" message={feedback} />}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((card) => {
-            const isClickable = !!card.onClick;
-            return (
-              <Card
-                key={card.label}
-                onClick={card.onClick}
-                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20 ${
-                  isClickable ? 'cursor-pointer hover:border-blue-500/30' : ''
-                }`}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-semibold text-slate-400">{card.label}</span>
-                  <div className={`w-9 h-9 ${card.iconBg} border rounded-lg flex items-center justify-center ${card.iconColor}`}>
-                    {card.icon}
-                  </div>
-                </div>
-                <div className={`text-2xl font-bold tracking-tight ${card.color}`}>{card.value}</div>
-                <div className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{card.sub}</div>
-              </Card>
-            );
-          })}
+          {statCards.map((card) => (
+            <KpiCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              icon={card.icon}
+              iconClassName={`${card.iconBg} ${card.iconColor}`}
+              valueClassName={card.color}
+              subtext={card.sub}
+              onClick={card.onClick}
+            />
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <Card className="lg:col-span-2 p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent" />
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                  7-Day Revenue
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-400 mt-0.5">Daily revenue from confirmed bookings</CardDescription>
-              </div>
+            <DataSectionCard
+              className="lg:col-span-2"
+              gradient="diagonal"
+              icon={<TrendingUp className="w-5 h-5 text-blue-500" />}
+              title="7-Day Revenue"
+              description="Daily revenue from confirmed bookings"
+              actions={
               <div className="text-right">
                 <div className="text-xs text-slate-400 font-medium">7-Day Total</div>
                 <div className="text-lg font-bold text-emerald-400">
                   ₹{stats.chartData.reduce((s, d) => s + d.revenue, 0).toFixed(0)}
                 </div>
               </div>
-            </div>
-
+              }
+            >
             <div className="h-72 w-full relative">
               {mounted ? (
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -483,31 +463,23 @@ const OwnerDashboard: React.FC = () => {
                 </div>
               )}
             </div>
-          </Card>
+          </DataSectionCard>
 
-           <Card className={`p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl transition-all ${recentBookingFlash ? 'ring-1 ring-emerald-500/40' : ''}`}>
-           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
-            <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-5">
-              <Package className="w-5 h-5 text-violet-500" />
-              My Properties
-            </CardTitle>
-
+           <DataSectionCard
+            className={`transition-all ${recentBookingFlash ? 'ring-1 ring-emerald-500/40' : ''}`}
+            icon={<Package className="w-5 h-5 text-violet-500" />}
+            title="My Properties"
+            bodyClassName="space-y-3 max-h-[380px] overflow-y-auto pr-1"
+           >
             <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
               {stats.lots.length === 0 ? (
-                <div className="text-center py-12 px-4 border border-dashed border-white/[0.08] rounded-xl bg-white/[0.02] space-y-3">
-                  <div className="w-12 h-12 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-center mx-auto text-violet-400">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-white text-sm">No Properties Yet</h4>
-                    <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
-                      Register your parking facility to start hosting drivers and generating revenue.
-                    </p>
-                  </div>
-                  <Button onClick={() => setShowModal(true)} aria-label="Register parking lot" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 h-9 flex items-center gap-1.5 mx-auto cursor-pointer">
-                    <Plus className="w-4 h-4" /> Register Lot
-                  </Button>
-                </div>
+                <EmptyStateCard
+                  className="border-dashed border-white/[0.08] bg-white/[0.02] p-8"
+                  icon={<div className="w-12 h-12 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-center mx-auto text-violet-400"><Building2 className="w-6 h-6" /></div>}
+                  title="No Properties Yet"
+                  description="Register your parking facility to start hosting drivers and generating revenue."
+                  action={<Button onClick={() => setShowModal(true)} aria-label="Register parking lot" className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 h-9 inline-flex items-center gap-1.5 cursor-pointer"><Plus className="w-4 h-4" /> Register Lot</Button>}
+                />
               ) : (
                 stats.lots.map(lot => (
                   <Card
@@ -548,12 +520,11 @@ const OwnerDashboard: React.FC = () => {
                 ))
               )}
             </div>
-          </Card>
+          </DataSectionCard>
         </div>
 
-          <Card className="p-6 border-white/[0.06] bg-[#111118] relative overflow-hidden rounded-xl">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
-             <CardTitle className="text-lg font-bold text-white flex items-center justify-between mb-4">
+          <DataSectionCard
+            title={
                <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-500" />
                   <span>Recent Bookings</span>
@@ -566,7 +537,8 @@ const OwnerDashboard: React.FC = () => {
                     </span>
                   )}
                </div>
-            <div className="flex items-center gap-2">
+            }
+            actions={<div className="flex items-center gap-2">
               {stats.recentBookings.length > 0 && (
                 <>
                   <Button
@@ -598,8 +570,8 @@ const OwnerDashboard: React.FC = () => {
                   </Button>
                 </>
               )}
-            </div>
-          </CardTitle>
+            </div>}
+          >
           
           {stats.recentBookings.length === 0 ? (
             <div className="text-center py-12 px-4 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.02] space-y-3">
@@ -670,7 +642,7 @@ const OwnerDashboard: React.FC = () => {
               ))}
             </div>
           )}
-        </Card>
+        </DataSectionCard>
       </main>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -688,10 +660,7 @@ const OwnerDashboard: React.FC = () => {
           </DialogHeader>
 
           {lotError && (
-            <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm px-4 py-3 rounded-lg flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              {lotError}
-            </div>
+            <StatusBanner variant="error" message={lotError} />
           )}
 
           <form onSubmit={handleCreateLot} className="space-y-4">

@@ -1,437 +1,349 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Zap, QrCode, CreditCard, ArrowRight, Search, BarChart3, Menu, X, Sparkles, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Car,
+  CheckCircle2,
+  CreditCard,
+  Menu,
+  QrCode,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  X,
+  Zap,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const Landing: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = 'smooth';
-    return () => { document.documentElement.style.scrollBehavior = ''; };
+    return () => {
+      document.documentElement.style.scrollBehavior = '';
+    };
   }, []);
 
   const navLinks = [
     { href: '#features', label: 'Features' },
-    { href: '#how-it-works', label: 'How It Works' },
-    { href: '#for-owners', label: 'For Owners' },
+    { href: '#dashboard', label: 'Dashboard' },
+    { href: '#roles', label: 'Solutions' },
+  ];
+
+  const stats = [
+    { value: '300+', label: 'Slots Seeded' },
+    { value: '20', label: 'Lots Managed' },
+    { value: '99.9%', label: 'Real-time Sync Uptime' },
+    { value: '<2 min', label: 'Avg Booking Time' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-[-8rem] h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-blue-600/10 blur-3xl" />
-        <div className="absolute right-[-6rem] top-[18rem] h-[22rem] w-[22rem] rounded-full bg-violet-600/10 blur-3xl" />
+    <div className="min-h-screen bg-[#0A0A0F] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-10rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute right-[-8rem] top-[20rem] h-[24rem] w-[24rem] rounded-full bg-blue-600/10 blur-3xl" />
+        <div className="absolute left-[-8rem] bottom-[6rem] h-[20rem] w-[20rem] rounded-full bg-emerald-500/10 blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0A0A0F]/95 backdrop-blur-sm border-b border-white/[0.06]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0A0A0F]/90 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 md:px-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Car className="w-5 h-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+              <Car className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white tracking-tight">ParkIt</span>
+            <span className="text-lg font-bold tracking-tight">ParkIt</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-slate-400 hover:text-white font-medium transition-colors"
+                className="text-sm font-medium text-slate-400 transition-colors hover:text-white"
               >
                 {link.label}
               </a>
             ))}
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/login"
-              className="text-sm text-slate-400 hover:text-white font-medium transition-colors"
-            >
+          <div className="hidden items-center gap-3 md:flex">
+            <Link to="/login" className="text-sm font-medium text-slate-400 transition-colors hover:text-white">
               Sign In
             </Link>
             <Link to="/register">
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-sm px-4 py-2 cursor-pointer">
-                Get Started
+              <Button className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                Start Free
               </Button>
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-slate-400 hover:text-white transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 text-slate-300 transition-colors hover:text-white md:hidden"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/[0.06] bg-[#0A0A0F]">
-            <nav className="px-4 py-4 space-y-3">
+          <div className="border-t border-white/[0.06] bg-[#0A0A0F] md:hidden">
+            <div className="space-y-3 px-4 py-4">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="block text-sm text-slate-400 hover:text-white font-medium transition-colors"
+                  className="block text-sm font-medium text-slate-300"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="pt-3 border-t border-white/[0.06] space-y-3">
-                <Link
-                  to="/login"
-                  className="block text-sm text-slate-400 hover:text-white font-medium transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
+              <div className="space-y-3 border-t border-white/[0.06] pt-3">
+                <Link to="/login" className="block text-sm font-medium text-slate-300" onClick={() => setMobileMenuOpen(false)}>
                   Sign In
                 </Link>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-sm px-4 py-2 cursor-pointer">
-                    Get Started
+                  <Button className="w-full cursor-pointer rounded-lg bg-blue-600 py-2 font-semibold text-white hover:bg-blue-500">
+                    Start Free
                   </Button>
                 </Link>
               </div>
-            </nav>
+            </div>
           </div>
         )}
       </header>
 
-      {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative">
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs text-blue-100 mb-6 shadow-[0_0_0_1px_rgba(37,99,235,0.08)]">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          Live parking, secure checkout, instant QR access
-        </div>
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.02] max-w-4xl">
-          Park smarter.
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-white to-violet-400">Book faster.</span>
-        </h1>
-        <p className="mt-5 text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed">
-          Real-time slot booking with QR access. Find parking, pay securely, and walk in — no hassle.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-10">
-          <Link to="/register">
-            <Button className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-base px-8 py-6 cursor-pointer gap-2">
-              Find Parking
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-          <Link to="/register">
-            <Button variant="outline" className="border-white/[0.12] text-white hover:bg-white/[0.04] font-bold rounded-lg text-base px-8 py-6 cursor-pointer">
-              List Your Lot
-            </Button>
-          </Link>
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
-          {[
-            ['300+', 'Slots seeded'],
-            ['20', 'Parking lots'],
-            ['24/7', 'Live availability'],
-          ].map(([value, label]) => (
-            <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-4 text-left backdrop-blur-sm">
-              <div className="text-xl font-bold text-white">{value}</div>
-              <div className="text-xs text-slate-400 mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 md:px-8 pb-8 md:pb-14">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { icon: Sparkles, title: 'Cleaner booking flow', text: 'Fewer clicks from search to reservation.' },
-            { icon: ShieldCheck, title: 'Trust cues', text: 'Verified lots and security-first presentation.' },
-            { icon: CreditCard, title: 'Payment clarity', text: 'Rates, duration, and total are easier to scan.' },
-          ].map(({ icon: Icon, title, text }) => (
-            <div key={title} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-left backdrop-blur-sm">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/15 border border-blue-500/20 flex items-center justify-center mb-3">
-                <Icon className="w-5 h-5 text-blue-400" />
-              </div>
-              <div className="text-sm font-semibold text-white">{title}</div>
-              <div className="mt-1 text-xs text-slate-400 leading-relaxed">{text}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="px-4 md:px-8 pb-20 md:pb-28">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="w-12 h-12 bg-emerald-500/15 border border-emerald-500/25 rounded-xl flex items-center justify-center mb-4">
-              <Zap className="w-6 h-6 text-emerald-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Live Slot Sync</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              See real-time availability across all lots. Slots update instantly via WebSocket — no refreshing needed.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="w-12 h-12 bg-blue-500/15 border border-blue-500/25 rounded-xl flex items-center justify-center mb-4">
-              <QrCode className="w-6 h-6 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">QR Access Passes</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Get an automated QR code after booking. Scan at the gate for instant entry and exit.
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="w-12 h-12 bg-amber-500/15 border border-amber-500/25 rounded-xl flex items-center justify-center mb-4">
-              <CreditCard className="w-6 h-6 text-amber-400" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Secure Payments</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Pay via Razorpay with full support for UPI, cards, and net banking. Extend your session anytime.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="px-4 md:px-8 pb-20 md:pb-28 bg-[#111118]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Book parking in three simple steps
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-500/15 border border-blue-500/25 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-blue-400" />
-              </div>
-              <div className="text-2xl font-bold text-blue-400 mb-2">1</div>
-              <h3 className="text-xl font-bold mb-2">Search</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Find available parking lots near your destination with real-time slot availability
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/25 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CreditCard className="w-8 h-8 text-emerald-400" />
-              </div>
-              <div className="text-2xl font-bold text-emerald-400 mb-2">2</div>
-              <h3 className="text-xl font-bold mb-2">Book & Pay</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Select your slot, choose your duration, and pay securely via Razorpay
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500/15 border border-amber-500/25 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <QrCode className="w-8 h-8 text-amber-400" />
-              </div>
-              <div className="text-2xl font-bold text-amber-400 mb-2">3</div>
-              <h3 className="text-xl font-bold mb-2">Park</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Scan your QR code at the gate and park with confidence
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Role Cards */}
-      <section id="for-owners" className="px-4 md:px-8 pb-20 md:pb-28">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-[#111118] border border-white/[0.06] border-t-2 border-t-blue-500 rounded-xl p-6 md:p-8">
-            <div className="w-11 h-11 bg-blue-500/15 border border-blue-500/25 rounded-lg flex items-center justify-center mb-5">
-              <Search className="w-5 h-5 text-blue-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">For Drivers</h3>
-            <ul className="space-y-2.5 text-sm text-slate-400 mb-6">
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                Search parking lots by city with live availability
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                Book and pay for slots in seconds
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">•</span>
-                Manage bookings, extend sessions, view receipts
-              </li>
-            </ul>
-            <Link to="/register">
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg w-full py-5 cursor-pointer">
-                Get Started as Driver
-              </Button>
-            </Link>
-          </div>
-
-          <div className="bg-[#111118] border border-white/[0.06] border-t-2 border-t-violet-500 rounded-xl p-6 md:p-8">
-            <div className="w-11 h-11 bg-violet-500/15 border border-violet-500/25 rounded-lg flex items-center justify-center mb-5">
-              <BarChart3 className="w-5 h-5 text-violet-400" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3">For Property Owners</h3>
-            <ul className="space-y-2.5 text-sm text-slate-400 mb-6">
-              <li className="flex items-start gap-2">
-                <span className="text-violet-400 mt-0.5">•</span>
-                Register your parking lot and set your rates
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-violet-400 mt-0.5">•</span>
-                Track 7-day revenue trends and occupancy rates
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-violet-400 mt-0.5">•</span>
-                Manage bookings and slot availability in real-time
-              </li>
-            </ul>
-            <Link to="/register">
-              <Button className="bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg w-full py-5 cursor-pointer">
-                List Your Property
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="px-4 md:px-8 pb-20 md:pb-28">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-600/20 to-violet-600/20 border border-blue-500/20 rounded-2xl p-8 md:p-12 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-slate-400 mb-8 max-w-xl mx-auto">
-            Join thousands of drivers and property owners using ParkIt to simplify parking
+      <section className="mx-auto grid w-full max-w-7xl gap-10 px-4 pb-16 pt-14 md:grid-cols-[1.1fr_0.9fr] md:px-8 md:pb-24 md:pt-20">
+        <div>
+          <Badge className="mb-6 border border-cyan-500/30 bg-cyan-500/15 px-3 py-1 text-xs font-semibold text-cyan-100">
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> Smart Parking for Drivers and Owners
+          </Badge>
+          <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl md:text-6xl">
+            ParkIt turns parking chaos
+            <span className="block bg-gradient-to-r from-cyan-300 via-white to-blue-300 bg-clip-text text-transparent">
+              into a live control system.
+            </span>
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
+            Discover available slots, pay securely, and enter with QR in minutes. Owners get occupancy, revenue, and lot operations in one dashboard.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link to="/register">
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-base px-8 py-6 cursor-pointer gap-2">
-                Create Free Account
-                <ArrowRight className="w-4 h-4" />
+              <Button className="h-12 cursor-pointer gap-2 rounded-lg bg-blue-600 px-7 text-base font-bold text-white hover:bg-blue-500">
+                Book Parking
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button variant="outline" className="h-12 cursor-pointer rounded-lg border-white/[0.14] bg-white/[0.02] px-7 text-base font-bold text-white hover:bg-white/[0.06]">
+                List Your Lot
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {stats.map((item) => (
+              <div key={item.label} className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-4">
+                <p className="text-lg font-bold text-white">{item.value}</p>
+                <p className="mt-1 text-xs text-slate-400">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-[#111118] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-200">Operations Snapshot</p>
+              <p className="text-xs text-slate-500">Live owner dashboard preview</p>
+            </div>
+            <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-300">Live</Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Active Bookings', value: '58', trend: '+12%' },
+              { label: 'Occupancy', value: '84%', trend: '+4%' },
+              { label: 'Revenue Today', value: '₹12,400', trend: '+18%' },
+              { label: 'Avg Slot Time', value: '2.6h', trend: '-6%' },
+            ].map((kpi) => (
+              <div key={kpi.label} className="rounded-lg border border-white/[0.08] bg-black/20 p-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">{kpi.label}</p>
+                <p className="mt-1 text-lg font-bold text-white">{kpi.value}</p>
+                <p className="text-xs text-emerald-300">{kpi.trend} vs last week</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-lg border border-white/[0.08] bg-black/20 p-3">
+            <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+              <span>Weekly Occupancy Trend</span>
+              <span>Last 7 days</span>
+            </div>
+            <div className="flex h-24 items-end gap-2">
+              {[38, 52, 46, 61, 58, 72, 84].map((value, index) => (
+                <div key={index} className="flex-1 rounded-t-md bg-gradient-to-t from-blue-600/45 to-cyan-300/70" style={{ height: `${value}%` }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-8 md:pb-24">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-bold sm:text-4xl">Core Product Capabilities</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-400 sm:text-base">
+            Designed to reduce booking friction for drivers and improve visibility for lot owners.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            {
+              icon: Zap,
+              title: 'Real-time Slot Updates',
+              text: 'Availability refreshes instantly so users always book from live inventory.',
+              tone: 'emerald',
+            },
+            {
+              icon: QrCode,
+              title: 'Instant QR Access',
+              text: 'Every booking generates a QR pass for smooth entry and verified access.',
+              tone: 'blue',
+            },
+            {
+              icon: CreditCard,
+              title: 'Secure Checkout',
+              text: 'Razorpay integration supports UPI/cards with transparent payment flow.',
+              tone: 'amber',
+            },
+          ].map(({ icon: Icon, title, text, tone }) => (
+            <div key={title} className="rounded-xl border border-white/[0.08] bg-[#111118] p-5">
+              <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-lg border ${
+                tone === 'emerald'
+                  ? 'border-emerald-500/25 bg-emerald-500/15'
+                  : tone === 'blue'
+                    ? 'border-blue-500/25 bg-blue-500/15'
+                    : 'border-amber-500/25 bg-amber-500/15'
+              }`}>
+                <Icon className={`h-5 w-5 ${
+                  tone === 'emerald' ? 'text-emerald-300' : tone === 'blue' ? 'text-blue-300' : 'text-amber-300'
+                }`} />
+              </div>
+              <h3 className="text-lg font-bold">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="dashboard" className="border-y border-white/[0.06] bg-[#0D0D14] px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Dashboard-first for Operations</h2>
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
+              ParkIt is structured like an operations tool, not just a booking form. Track occupancy, revenue, and slot utilization with role-based views.
+            </p>
+            <ul className="mt-7 space-y-3 text-sm text-slate-300">
+              {[
+                'KPI cards for occupancy, active bookings, revenue, and dwell time',
+                'Filter-friendly tables for lot-level audits and booking history',
+                'Drill-down flow from summary cards to detailed operational views',
+                'State coverage for loading, empty, error, and partial data',
+              ].map((point) => (
+                <li key={point} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-300" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.08] bg-[#111118] p-5">
+            <p className="text-sm font-semibold text-slate-200">Example Dashboard Flow</p>
+            <div className="mt-4 space-y-3">
+              {[
+                { icon: Search, title: 'Overview Layer', text: 'Scan KPIs and detect anomalies fast.' },
+                { icon: BarChart3, title: 'Trend Layer', text: 'Analyze lot-wise occupancy and earnings.' },
+                { icon: ShieldCheck, title: 'Action Layer', text: 'Update slots, rates, and issue handling.' },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="rounded-lg border border-white/[0.08] bg-black/20 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                    <Icon className="h-4 w-4 text-cyan-300" />
+                    {title}
+                  </div>
+                  <p className="text-xs text-slate-400">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="roles" className="mx-auto w-full max-w-6xl px-4 py-16 md:px-8 md:py-24">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="rounded-xl border border-white/[0.08] bg-[#111118] p-6 md:p-8">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg border border-blue-500/25 bg-blue-500/15">
+              <Search className="h-5 w-5 text-blue-300" />
+            </div>
+            <h3 className="text-2xl font-bold">For Drivers</h3>
+            <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <li>Real-time lot search with transparent availability</li>
+              <li>Fast booking and secure checkout</li>
+              <li>QR-based gate entry and booking management</li>
+            </ul>
+            <Link to="/register" className="mt-6 inline-block">
+              <Button className="cursor-pointer bg-blue-600 font-semibold text-white hover:bg-blue-500">
+                Join as Driver
+              </Button>
+            </Link>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.08] bg-[#111118] p-6 md:p-8">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg border border-violet-500/25 bg-violet-500/15">
+              <BarChart3 className="h-5 w-5 text-violet-300" />
+            </div>
+            <h3 className="text-2xl font-bold">For Owners</h3>
+            <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <li>Manage inventory and pricing by lot</li>
+              <li>Track bookings and 7-day revenue trends</li>
+              <li>Monitor performance with actionable dashboard metrics</li>
+            </ul>
+            <Link to="/register" className="mt-6 inline-block">
+              <Button className="cursor-pointer bg-violet-600 font-semibold text-white hover:bg-violet-500">
+                List Your Lot
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] bg-[#111118]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Brand */}
-            <div className="md:col-span-1">
-              <Link to="/" className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Car className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-lg font-bold text-white tracking-tight">ParkIt</span>
-              </Link>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Smart parking management platform with real-time availability and secure payments.
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <h3 className="font-semibold text-white mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#features" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#how-it-works" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    How It Works
-                  </a>
-                </li>
-                <li>
-                  <a href="#for-owners" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    For Owners
-                  </a>
-                </li>
-                <li>
-                  <Link to="/register" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Get Started
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h3 className="font-semibold text-white mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" onClick={e => { e.preventDefault(); alert('About page coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={e => { e.preventDefault(); alert('Contact page coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={e => { e.preventDefault(); alert('Privacy Policy coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" onClick={e => { e.preventDefault(); alert('Terms of Service coming soon!'); }} className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Connect */}
-            <div>
-              <h3 className="font-semibold text-white mb-4">Connect</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    GitHub
-                  </a>
-                </li>
-                <li>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    Twitter
-                  </a>
-                </li>
-                <li>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:support@parkit.com" className="text-sm text-slate-400 hover:text-white transition-colors">
-                    support@parkit.com
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-slate-400">
-              © 2024 ParkIt. All rights reserved.
-            </p>
-            <p className="text-sm text-slate-500">
-              Built with React, Express, and TiDB
-            </p>
+      <section className="px-4 pb-16 md:px-8 md:pb-24">
+        <div className="mx-auto max-w-5xl rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-blue-600/10 to-transparent p-8 text-center md:p-12">
+          <h2 className="text-3xl font-bold sm:text-4xl">Ready to launch your smarter parking flow?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm text-slate-300 sm:text-base">
+            Create your account and move from manual slot coordination to a real-time booking and operations system.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/register">
+              <Button className="h-12 cursor-pointer gap-2 rounded-lg bg-blue-600 px-7 text-base font-bold text-white hover:bg-blue-500">
+                Create Account
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/login">
+              <Button variant="outline" className="h-12 cursor-pointer rounded-lg border-white/20 bg-transparent px-7 text-base font-bold text-white hover:bg-white/[0.06]">
+                Sign In
+              </Button>
+            </Link>
           </div>
         </div>
-      </footer>
+      </section>
     </div>
   );
 };

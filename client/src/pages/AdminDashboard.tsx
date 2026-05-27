@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   Shield, Users, MapPin, DollarSign, CheckCircle2, XCircle,
-  Clock, Loader2, AlertTriangle, TrendingUp, Building2, Search, RefreshCw,
+  Clock, Loader2, TrendingUp, Building2, Search, RefreshCw,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import KpiCard from '../components/dashboard/KpiCard';
+import FilterBar from '../components/dashboard/FilterBar';
+import StatusBanner from '../components/dashboard/StatusBanner';
+import EmptyStateCard from '../components/dashboard/EmptyStateCard';
+import DataSectionCard from '../components/dashboard/DataSectionCard';
 import api from '../api/axios';
 import type { ParkingLot, User } from '../types';
 
@@ -180,124 +186,91 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-6 mt-6 relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-          <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-rose-500/15 rounded-lg flex items-center justify-center border border-rose-500/25">
-                <Shield className="w-5 h-5 text-rose-400" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Admin Panel</h1>
-            </div>
-            <p className="text-slate-400 text-sm ml-[52px] max-w-xl leading-relaxed">
-              Platform oversight, approvals, and user management
-            </p>
-            <div className="ml-[52px] mt-3 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              Mobile-friendly review and moderation tools
-            </div>
-          </div>
-            <Button
-              variant="outline"
-              onClick={() => fetchData(true)}
-              disabled={refreshing}
-              aria-label="Refresh admin dashboard"
-              className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const headers = ['Name', 'City', 'Owner', 'Status', 'Rate'];
-                const rows = filteredLots.map((l: any) => [
-                  l.name,
-                  l.city,
-                  l.owner?.name || '',
-                  l.status,
-                  l.pricePerHour,
-                ]);
-                const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `parkit-lots-${Date.now()}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast({ title: 'CSV exported', description: 'Property data downloaded.', variant: 'success' });
-              }}
-              className="text-xs"
-            >
-              Export CSV
-            </Button>
-            <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    const id = window.setInterval(() => fetchData(true), 30000);
-                    (window as any).__adminAutoRefresh = id;
-                  } else {
-                    const id = (window as any).__adminAutoRefresh;
-                    if (id) window.clearInterval(id);
-                  }
+        <DashboardHeader
+          icon={<div className="w-10 h-10 bg-rose-500/15 rounded-lg flex items-center justify-center border border-rose-500/25"><Shield className="w-5 h-5 text-rose-400" /></div>}
+          title="Admin Panel"
+          description="Platform oversight for approvals, property moderation, and user governance."
+          statusText="Mobile-friendly review and moderation tools"
+          statusDotClassName="bg-rose-500"
+          badges={[
+            { label: 'Approval Queue', className: 'bg-rose-500/15 text-rose-300 border-rose-500/25' },
+            { label: 'Property Governance', className: 'bg-blue-500/15 text-blue-300 border-blue-500/25' },
+            { label: 'User Directory', className: 'bg-violet-500/15 text-violet-300 border-violet-500/25' },
+          ]}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                onClick={() => fetchData(true)}
+                disabled={refreshing}
+                aria-label="Refresh admin dashboard"
+                className="border-white/[0.08] hover:bg-white/[0.04] text-slate-300 font-semibold"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const headers = ['Name', 'City', 'Owner', 'Status', 'Rate'];
+                  const rows = filteredLots.map((l: any) => [
+                    l.name,
+                    l.city,
+                    l.owner?.name || '',
+                    l.status,
+                    l.pricePerHour,
+                  ]);
+                  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `parkit-lots-${Date.now()}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast({ title: 'CSV exported', description: 'Property data downloaded.', variant: 'success' });
                 }}
-              />
-              Auto 30s
-            </label>
-        </div>
+                className="text-xs"
+              >
+                Export CSV
+              </Button>
+              <label className="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const id = window.setInterval(() => fetchData(true), 30000);
+                      (window as any).__adminAutoRefresh = id;
+                    } else {
+                      const id = (window as any).__adminAutoRefresh;
+                      if (id) window.clearInterval(id);
+                    }
+                  }}
+                />
+                Auto 30s
+              </label>
+            </>
+          }
+        />
 
-        {error && (
-          <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-lg flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {feedback && !error && (
-          <div role="status" aria-live="polite" className="bg-blue-500/10 border border-blue-500/20 text-blue-300 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            {feedback}
-          </div>
-        )}
+        {error && <StatusBanner variant="error" message={error} />}
+        {feedback && !error && <StatusBanner variant="success" message={feedback} />}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((card) => {
-            const isClickable = !!card.onClick;
-            return (
-              <Card
-                key={card.label}
-                onClick={card.onClick}
-                className={`p-5 rounded-xl border-white/[0.06] bg-[#111118] relative overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/20 ${
-                  isClickable
-                    ? 'cursor-pointer hover:border-rose-500/30'
-                    : ''
-                }`}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-xs font-semibold text-slate-400">{card.label}</span>
-                  <div className={`w-9 h-9 ${card.iconBg} border rounded-lg flex items-center justify-center relative`}>
-                    {card.icon}
-                    {card.pulse && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" />
-                    )}
-                  </div>
-                </div>
-                <div className={`text-2xl font-bold tracking-tight ${card.color}`}>{card.value}</div>
-                {card.subtext && (
-                  <div className={`text-xs mt-1 leading-relaxed ${
-                    card.label === 'Pending Approvals' && (stats?.pendingLots?.length ?? 0) > 0
-                      ? 'text-amber-400 font-semibold'
-                      : 'text-slate-500'
-                  }`}>
-                    {card.subtext}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
+          {statCards.map((card) => (
+            <KpiCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              icon={card.icon}
+              iconClassName={card.iconBg}
+              valueClassName={card.color}
+              subtext={card.subtext}
+              onClick={card.onClick}
+              pulse={card.pulse}
+            />
+          ))}
         </div>
 
         {(stats?.pendingLots?.length ?? 0) > 0 && (
@@ -346,8 +319,15 @@ const AdminDashboard: React.FC = () => {
           </TabsList>
 
           <TabsContent value="lots" className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="bg-[#111118] border border-white/[0.06] p-1 flex gap-1 rounded-lg w-full sm:w-fit overflow-x-auto">
+            <DataSectionCard
+              title="Properties"
+              description="Review, approve, and moderate submitted parking lots."
+              icon={<MapPin className="w-5 h-5 text-blue-400" />}
+              className="p-5"
+              bodyClassName="space-y-4"
+            >
+            <FilterBar
+              left={<div className="bg-[#111118] border border-white/[0.06] p-1 flex gap-1 rounded-lg w-full sm:w-fit overflow-x-auto">
                 {(['all', 'pending', 'approved', 'rejected'] as const).map((filter) => {
                   const count = filter === 'all'
                     ? lots.length
@@ -374,9 +354,8 @@ const AdminDashboard: React.FC = () => {
                     </Button>
                   );
                 })}
-              </div>
-
-              <div className="relative w-full sm:max-w-xs">
+              </div>}
+              right={<div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
                   type="text"
@@ -385,14 +364,14 @@ const AdminDashboard: React.FC = () => {
                   value={lotSearch}
                   onChange={e => setLotSearch(e.target.value)}
                 />
-              </div>
-            </div>
+              </div>}
+            />
 
             {filteredLots.length === 0 ? (
-              <Card className="p-12 text-center text-slate-500 space-y-2 border-white/[0.06] bg-[#111118]">
-                <Building2 className="w-10 h-10 mx-auto opacity-30 text-blue-400" />
-                <p className="font-medium text-slate-400">No properties found.</p>
-              </Card>
+              <EmptyStateCard
+                icon={<Building2 className="w-10 h-10 mx-auto opacity-30 text-blue-400" />}
+                title="No properties found."
+              />
             ) : (
               <div className="space-y-3">
                 {filteredLots.map((lot: any) => (
@@ -473,9 +452,17 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+            </DataSectionCard>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
+            <DataSectionCard
+              title="Users"
+              description="Search and review platform users by role and signup date."
+              icon={<Users className="w-5 h-5 text-blue-400" />}
+              className="p-5"
+              bodyClassName="space-y-4"
+            >
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <Input
@@ -578,6 +565,7 @@ const AdminDashboard: React.FC = () => {
                 </Card>
               )}
             </div>
+            </DataSectionCard>
           </TabsContent>
         </Tabs>
       </main>

@@ -167,6 +167,7 @@ const SlotGrid: React.FC<Props> = ({ lotId, selectedSlot, onSelectSlot, isOwner 
           return (
             <button
               key={slot.id}
+              id={`slot-btn-${slot.id}`}
               onClick={() => {
                 if ((slot.isAvailable || isOwner)) {
                   setConflictSlotId(null);
